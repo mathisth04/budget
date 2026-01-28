@@ -2,129 +2,333 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Budget 2026</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ZenBudget</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #050505; color: white; margin: 0; font-family: sans-serif; }
-        .card { background-color: #0F0F0F; border: 1px solid #1A1A1A; border-radius: 12px; }
+        :root {
+            --bg-color: #0f0f12;
+            --card-bg: #1e1e26;
+            --accent-primary: #00f2ff; /* Cyan vif */
+            --accent-secondary: #7000ff; /* Violet */
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --loss: #ff4d4d;
+            --gain: #00ff88;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding-bottom: 80px;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            border-top: 1px solid #333;
+            z-index: 100;
+        }
+
+        .nav-item { color: var(--text-dim); text-decoration: none; font-size: 12px; text-align: center; cursor: pointer; }
+        .nav-item.active { color: var(--accent-primary); font-weight: bold; }
+
+        /* Screens */
+        .screen { display: none; padding: 20px; animation: fadeIn 0.3s; }
+        .screen.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Jauge Circulaire */
+        .chart-container {
+            position: relative;
+            width: 250px;
+            margin: 20px auto;
+        }
+
+        .chart-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .balance-value { font-size: 24px; font-weight: bold; color: var(--accent-primary); }
+
+        /* Cartes et Listes */
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .stats-row { display: flex; justify-content: space-between; margin-top: 15px; }
+        .stat-box { text-align: center; }
+        .stat-val { display: block; font-size: 18px; font-weight: bold; }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Inputs */
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: none;
+            background: #2d2d3a;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        button { background: var(--accent-secondary); font-weight: bold; cursor: pointer; }
+        button:disabled { background: #444; color: #888; }
+
+        /* Calendrier */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
+        .calendar-day { padding: 10px 0; border-radius: 5px; cursor: pointer; }
+        .today { background: var(--accent-secondary) !important; color: white; border: 1px solid var(--accent-primary); }
+        .selected-day { border: 2px solid var(--accent-primary); }
     </style>
 </head>
 <body>
-    <div id="root">
-        <div style="color: gray; text-align: center; margin-top: 50px;">Chargement de l'application...</div>
+
+    <div id="global" class="screen active">
+        <h2 style="text-align: center;">Vue Globale</h2>
+        <div class="chart-container">
+            <canvas id="globalChart"></canvas>
+            <div class="chart-label">
+                <span class="text-dim">Solde Total</span><br>
+                <span id="globalBalance" class="balance-value">0€</span>
+            </div>
+        </div>
+        <div class="stats-row">
+            <div class="stat-box">Total Gains<br><span id="totalGains" style="color: var(--gain)">0€</span></div>
+            <div class="stat-box">Total Dépenses<br><span id="totalLoss" style="color: var(--loss)">0€</span></div>
+        </div>
+        <h3>Historique Complet</h3>
+        <div id="globalHistory"></div>
     </div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-
-        const COLORS = { blue: '#00D4FF', purple: '#BB86FC', green: '#00FF9D', red: '#FF3D71', border: '#1A1A1A' };
-
-        function App() {
-            const [currentTab, setCurrentTab] = useState('Global');
-            const [transactions, setTransactions] = useState([]);
-            const [budgetLimit, setBudgetLimit] = useState(0);
-            const [isLimitLocked, setIsLimitLocked] = useState(false);
-            const [desc, setDesc] = useState('');
-            const [amount, setAmount] = useState('');
-            const [tempLimit, setTempLimit] = useState('');
-
-            // Chargement initial
-            useEffect(() => {
-                try {
-                    const savedTx = localStorage.getItem('@tx_final');
-                    if (savedTx) setTransactions(JSON.parse(savedTx));
-                    const savedLimit = localStorage.getItem('@limit_final');
-                    if (savedLimit) setBudgetLimit(parseFloat(savedLimit));
-                    const savedLocked = localStorage.getItem('@locked_final');
-                    if (savedLocked === 'true') setIsLimitLocked(true);
-                } catch (e) { console.error("Erreur de chargement", e); }
-            }, []);
-
-            // Sauvegarde auto
-            useEffect(() => {
-                localStorage.setItem('@tx_final', JSON.stringify(transactions));
-                localStorage.setItem('@limit_final', budgetLimit.toString());
-                localStorage.setItem('@locked_final', isLimitLocked.toString());
-            }, [transactions, budgetLimit, isLimitLocked]);
-
-            const totalIn = transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-            const totalOut = transactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
-            const balance = 1047.92 + totalIn - totalOut;
-
-            const addTx = (type) => {
-                if (!desc || !amount) return;
-                const val = type === 'in' ? Math.abs(parseFloat(amount)) : -Math.abs(parseFloat(amount));
-                const newT = { 
-                    id: Date.now().toString(), 
-                    desc, 
-                    amount: val, 
-                    date: new Date().toLocaleDateString() 
-                };
-                setTransactions([newT, ...transactions]);
-                setDesc(''); setAmount('');
-            };
-
-            return (
-                <div className="max-w-md mx-auto min-h-screen flex flex-col p-4">
-                    <div className="flex justify-around mb-8 border-b border-gray-800 pb-2">
-                        {['Global', 'Budget'].map(t => (
-                            <button key={t} onClick={() => setCurrentTab(t)} 
-                                className={`text-sm font-bold ${currentTab === t ? 'text-cyan-400' : 'text-gray-500'}`}>
-                                {t.toUpperCase()}
-                            </button>
-                        ))}
-                    </div>
-
-                    {currentTab === 'Global' ? (
-                        <div className="text-center">
-                            <div className="text-gray-500 text-xs mb-1">SOLDE ACTUEL</div>
-                            <div className="text-4xl font-bold text-cyan-400 mb-8">{balance.toFixed(2)}€</div>
-                            
-                            <div className="grid grid-cols-2 gap-4 mb-8">
-                                <div className="card p-3"><div className="text-[10px] text-gray-500">ENTRÉES</div><div className="text-green-400">{totalIn.toFixed(2)}€</div></div>
-                                <div className="card p-3"><div className="text-[10px] text-gray-500">SORTIES</div><div className="text-red-400">-{totalOut.toFixed(2)}€</div></div>
-                            </div>
-
-                            <div className="text-left">
-                                <h3 className="text-cyan-400 text-sm font-bold mb-4 uppercase italic">Historique</h3>
-                                {transactions.map(t => (
-                                    <div key={t.id} className="card p-3 flex justify-between items-center mb-2">
-                                        <div className="text-sm">{t.desc}</div>
-                                        <div className={`font-bold ${t.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>{t.amount.toFixed(2)}€</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-4">
-                            {!isLimitLocked ? (
-                                <div className="card p-4">
-                                    <input type="number" placeholder="Limite Mensuelle" className="w-full bg-black border border-gray-800 p-2 rounded mb-4" onChange={(e) => setTempLimit(e.target.value)} />
-                                    <button onClick={() => {setBudgetLimit(parseFloat(tempLimit)); setIsLimitLocked(true);}} className="w-full bg-cyan-500 text-black font-bold p-2 rounded">FIXER LA LIMITE</button>
-                                </div>
-                            ) : (
-                                <div className="card p-4">
-                                    <div className="text-center mb-4">Limite : {budgetLimit}€</div>
-                                    <input type="text" placeholder="Nom" value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full bg-black border border-gray-800 p-2 rounded mb-2" />
-                                    <input type="number" placeholder="Montant" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-black border border-gray-800 p-2 rounded mb-4" />
-                                    <div className="flex gap-2">
-                                        <button onClick={() => addTx('in')} className="flex-1 bg-green-500 text-black font-bold p-2 rounded">GAIN</button>
-                                        <button onClick={() => addTx('out')} className="flex-1 bg-red-500 text-black font-bold p-2 rounded">DÉPENSE</button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+    <div id="budget" class="screen">
+        <h2>Budget Mensuel</h2>
+        <div class="card">
+            <div id="budgetStatus">Définissez votre budget</div>
+            <input type="number" id="budgetInput" placeholder="Montant du budget (ex: 500)">
+            <button id="saveBudgetBtn" onclick="lockBudget()">Valider le Budget</button>
+            
+            <div class="chart-container">
+                <canvas id="budgetChart"></canvas>
+                <div class="chart-label">
+                    <span id="budgetRemains" class="balance-value">0€</span><br>
+                    <span class="text-dim">restants</span>
                 </div>
-            );
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Nouvelle Opération</h3>
+            <input type="text" id="opName" placeholder="Nom (ex: Courses)">
+            <input type="number" id="opAmount" placeholder="Montant">
+            <div style="display: flex; gap: 10px;">
+                <button onclick="addTransaction('gain')" style="background: var(--gain); color: black;">+ Entrée</button>
+                <button onclick="addTransaction('loss')" style="background: var(--loss); color: black;">- Dépense</button>
+            </div>
+        </div>
+        <div id="monthlyHistory"></div>
+    </div>
+
+    <div id="calendar" class="screen">
+        <h2 id="calendarMonthTitle">Janvier 2026</h2>
+        <div class="card">
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+        <h3>Détails du jour</h3>
+        <div id="dayDetails" class="card">Sélectionnez un jour</div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-item active" onclick="showScreen('global', this)">Global</div>
+        <div class="nav-item" onclick="showScreen('budget', this)">Budget</div>
+        <div class="nav-item" onclick="showScreen('calendar', this)">Calendrier</div>
+    </nav>
+
+    <script>
+        // Initialisation des données
+        let data = JSON.parse(localStorage.getItem('budgetData')) || {
+            baseBalance: 1047.92,
+            monthlyBudget: 0,
+            budgetLockedUntil: null,
+            transactions: []
+        };
+
+        let currentViewDate = new Date();
+
+        function saveData() {
+            localStorage.setItem('budgetData', JSON.stringify(data));
+            updateUI();
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function showScreen(id, el) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            el.classList.add('active');
+            if(id === 'calendar') renderCalendar();
+        }
+
+        function addTransaction(type) {
+            const name = document.getElementById('opName').value;
+            const amount = parseFloat(document.getElementById('opAmount').value);
+            if(!name || !amount) return;
+
+            data.transactions.push({
+                id: Date.now(),
+                name,
+                amount: type === 'loss' ? -amount : amount,
+                date: new Date().toISOString(),
+                type
+            });
+            saveData();
+            document.getElementById('opName').value = '';
+            document.getElementById('opAmount').value = '';
+        }
+
+        function lockBudget() {
+            const val = parseFloat(document.getElementById('budgetInput').value);
+            if(!val) return;
+            data.monthlyBudget = val;
+            let nextMonth = new Date();
+            nextMonth.setMonth(nextMonth.getMonth() + 1, 1);
+            data.budgetLockedUntil = nextMonth.toISOString();
+            saveData();
+        }
+
+        function updateUI() {
+            // Calculs globaux
+            const totalGains = data.transactions.filter(t => t.amount > 0).reduce((a, b) => a + b.amount, 0);
+            const totalLoss = data.transactions.filter(t => t.amount < 0).reduce((a, b) => a + Math.abs(b.amount), 0);
+            const finalBalance = data.baseBalance + totalGains - totalLoss;
+
+            document.getElementById('globalBalance').innerText = finalBalance.toFixed(2) + '€';
+            document.getElementById('totalGains').innerText = '+' + totalGains.toFixed(2) + '€';
+            document.getElementById('totalLoss').innerText = '-' + totalLoss.toFixed(2) + '€';
+
+            // Budget mensuel
+            const now = new Date();
+            const isLocked = data.budgetLockedUntil && new Date(data.budgetLockedUntil) > now;
+            document.getElementById('budgetInput').disabled = isLocked;
+            document.getElementById('saveBudgetBtn').disabled = isLocked;
+            document.getElementById('budgetStatus').innerText = isLocked ? "Budget verrouillé" : "Définissez le budget";
+            
+            const monthlySpent = data.transactions
+                .filter(t => new Date(t.date).getMonth() === now.getMonth() && t.amount < 0)
+                .reduce((a, b) => a + Math.abs(b.amount), 0);
+            
+            document.getElementById('budgetRemains').innerText = (data.monthlyBudget - monthlySpent).toFixed(2) + '€';
+
+            renderCharts(finalBalance, totalGains, totalLoss, data.monthlyBudget, monthlySpent);
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const histHtml = data.transactions.slice().reverse().map(t => `
+                <div class="transaction-item">
+                    <span>${t.name}<br><small>${new Date(t.date).toLocaleDateString()}</small></span>
+                    <span style="color: ${t.amount > 0 ? 'var(--gain)' : 'var(--loss)'}">${t.amount > 0 ? '+' : ''}${t.amount}€</span>
+                </div>
+            `).join('');
+            document.getElementById('globalHistory').innerHTML = histHtml;
+            document.getElementById('monthlyHistory').innerHTML = histHtml;
+        }
+
+        // Configuration des graphiques Chart.js
+        let gChart, bChart;
+        function renderCharts(balance, gains, loss, budget, spent) {
+            const ctxG = document.getElementById('globalChart').getContext('2d');
+            if(gChart) gChart.destroy();
+            gChart = new Chart(ctxG, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [gains, loss],
+                        backgroundColor: ['#00ff88', '#ff4d4d'],
+                        borderWidth: 0,
+                        cutout: '85%'
+                    }]
+                }
+            });
+
+            const ctxB = document.getElementById('budgetChart').getContext('2d');
+            if(bChart) bChart.destroy();
+            bChart = new Chart(ctxB, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [spent, Math.max(0, budget - spent)],
+                        backgroundColor: ['#7000ff', '#2d2d3a'],
+                        borderWidth: 0,
+                        cutout: '85%'
+                    }]
+                }
+            });
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), 1);
+            document.getElementById('calendarMonthTitle').innerText = d.toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'});
+            
+            // Remplissage simple du mois
+            for(let i = 1; i <= 31; i++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                dayDiv.innerText = i;
+                const dateStr = new Date(d.getFullYear(), d.getMonth(), i).toDateString();
+                if(dateStr === new Date().toDateString()) dayDiv.classList.add('today');
+                
+                dayDiv.onclick = () => {
+                    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected-day'));
+                    dayDiv.classList.add('selected-day');
+                    showDayDetails(new Date(d.getFullYear(), d.getMonth(), i));
+                };
+                grid.appendChild(dayDiv);
+            }
+        }
+
+        function showDayDetails(date) {
+            const dayT = data.transactions.filter(t => new Date(t.date).toDateString() === date.toDateString());
+            document.getElementById('dayDetails').innerHTML = dayT.length ? dayT.map(t => `
+                <div class="transaction-item">
+                    <span>${t.name}</span>
+                    <span style="color: ${t.amount > 0 ? 'var(--gain)' : 'var(--loss)'}">${t.amount}€</span>
+                </div>
+            `).join('') : "Aucune opération ce jour.";
+        }
+
+        window.onload = updateUI;
     </script>
 </body>
 </html>
