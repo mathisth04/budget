@@ -4,67 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon Budget 2026</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #050505; color: white; font-family: sans-serif; }
+        body { background-color: #050505; color: white; margin: 0; font-family: sans-serif; }
         .card { background-color: #0F0F0F; border: 1px solid #1A1A1A; border-radius: 12px; }
-        .blue-text { color: #00D4FF; }
-        .purple-text { color: #BB86FC; }
-        .green-text { color: #00FF9D; }
-        .red-text { color: #FF3D71; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div style="color: gray; text-align: center; margin-top: 50px;">Chargement de l'application...</div>
+    </div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const INITIAL_BALANCE = 1047.92;
         const COLORS = { blue: '#00D4FF', purple: '#BB86FC', green: '#00FF9D', red: '#FF3D71', border: '#1A1A1A' };
-
-        // --- COMPOSANT PROGRÈS CIRCULAIRE ---
-        const CircularProgress = ({ size, strokeWidth, percentage, color, label, subLabel }) => {
-            const radius = (size - strokeWidth) / 2;
-            const circumference = radius * 2 * Math.PI;
-            const offset = circumference - (Math.min(percentage, 100) / 100) * circumference;
-            return (
-                <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-                    <svg width={size} height={size} className="transform -rotate-90">
-                        <circle cx={size/2} cy={size/2} r={radius} stroke={COLORS.border} strokeWidth={strokeWidth} fill="none" />
-                        <circle cx={size/2} cy={size/2} r={radius} stroke={color} strokeWidth={strokeWidth} fill="none" 
-                                strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-500" />
-                    </svg>
-                    <div className="absolute text-center">
-                        <div className="text-gray-500 text-xs uppercase">{label}</div>
-                        <div className="text-2xl font-bold" style={{ color }}>{subLabel}</div>
-                    </div>
-                </div>
-            );
-        };
 
         function App() {
             const [currentTab, setCurrentTab] = useState('Global');
             const [transactions, setTransactions] = useState([]);
             const [budgetLimit, setBudgetLimit] = useState(0);
             const [isLimitLocked, setIsLimitLocked] = useState(false);
-            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [desc, setDesc] = useState('');
             const [amount, setAmount] = useState('');
             const [tempLimit, setTempLimit] = useState('');
 
+            // Chargement initial
             useEffect(() => {
-                const tx = localStorage.getItem('@tx_final');
-                const limit = localStorage.getItem('@limit_final');
-                const locked = localStorage.getItem('@locked_final');
-                if (tx) setTransactions(JSON.parse(tx));
-                if (limit) setBudgetLimit(parseFloat(limit));
-                if (locked === 'true') setIsLimitLocked(true);
+                try {
+                    const savedTx = localStorage.getItem('@tx_final');
+                    if (savedTx) setTransactions(JSON.parse(savedTx));
+                    const savedLimit = localStorage.getItem('@limit_final');
+                    if (savedLimit) setBudgetLimit(parseFloat(savedLimit));
+                    const savedLocked = localStorage.getItem('@locked_final');
+                    if (savedLocked === 'true') setIsLimitLocked(true);
+                } catch (e) { console.error("Erreur de chargement", e); }
             }, []);
 
+            // Sauvegarde auto
             useEffect(() => {
                 localStorage.setItem('@tx_final', JSON.stringify(transactions));
                 localStorage.setItem('@limit_final', budgetLimit.toString());
@@ -73,96 +53,72 @@
 
             const totalIn = transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
             const totalOut = transactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
-            const globalBalance = INITIAL_BALANCE + totalIn - totalOut;
-            const monthlyExpenses = transactions.filter(t => new Date(t.date).getMonth() === new Date().getMonth() && t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
-            const budgetProgress = budgetLimit > 0 ? (monthlyExpenses / budgetLimit) * 100 : 0;
+            const balance = 1047.92 + totalIn - totalOut;
 
             const addTx = (type) => {
                 if (!desc || !amount) return;
                 const val = type === 'in' ? Math.abs(parseFloat(amount)) : -Math.abs(parseFloat(amount));
-                const newT = { id: Date.now().toString(), desc, amount: val, date: new Date().toISOString().split('T')[0] };
+                const newT = { 
+                    id: Date.now().toString(), 
+                    desc, 
+                    amount: val, 
+                    date: new Date().toLocaleDateString() 
+                };
                 setTransactions([newT, ...transactions]);
                 setDesc(''); setAmount('');
             };
 
             return (
-                <div className="max-w-md mx-auto min-h-screen flex flex-col px-4">
-                    {/* Onglets */}
-                    <div className="flex justify-around py-4 border-b border-gray-800">
-                        {['Global', 'Budget', 'Calendrier'].map(t => (
+                <div className="max-w-md mx-auto min-h-screen flex flex-col p-4">
+                    <div className="flex justify-around mb-8 border-b border-gray-800 pb-2">
+                        {['Global', 'Budget'].map(t => (
                             <button key={t} onClick={() => setCurrentTab(t)} 
-                                    className={`pb-2 px-2 text-sm font-bold ${currentTab === t ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-500'}`}>
-                                {t}
+                                className={`text-sm font-bold ${currentTab === t ? 'text-cyan-400' : 'text-gray-500'}`}>
+                                {t.toUpperCase()}
                             </button>
                         ))}
                     </div>
 
-                    <div className="flex-1 py-6 overflow-y-auto">
-                        {currentTab === 'Global' && (
-                            <div className="flex flex-col items-center">
-                                <CircularProgress size={220} strokeWidth={12} percentage={100} color={COLORS.blue} label="Solde Actuel" subLabel={`${globalBalance.toFixed(2)}€`} />
-                                <div className="flex w-full justify-between mt-8 gap-4">
-                                    <div className="card p-4 flex-1 text-center">
-                                        <div className="text-gray-500 text-[10px]">ENTRÉES</div>
-                                        <div className="green-text font-bold">{totalIn.toFixed(2)}€</div>
-                                    </div>
-                                    <div className="card p-4 flex-1 text-center">
-                                        <div className="text-gray-500 text-[10px]">SORTIES</div>
-                                        <div className="red-text font-bold">-{totalOut.toFixed(2)}€</div>
-                                    </div>
-                                </div>
-                                <div className="w-full mt-8">
-                                    <h3 className="blue-text font-bold mb-4">Historique Global</h3>
-                                    {transactions.map(t => (
-                                        <div key={t.id} className="card p-4 flex justify-between items-center mb-2">
-                                            <div>
-                                                <div className="text-sm">{t.desc}</div>
-                                                <div className="text-[10px] text-gray-500">{t.date}</div>
-                                            </div>
-                                            <div className={`font-bold ${t.amount > 0 ? 'green-text' : 'red-text'}`}>{t.amount.toFixed(2)}€</div>
-                                        </div>
-                                    ))}
-                                </div>
+                    {currentTab === 'Global' ? (
+                        <div className="text-center">
+                            <div className="text-gray-500 text-xs mb-1">SOLDE ACTUEL</div>
+                            <div className="text-4xl font-bold text-cyan-400 mb-8">{balance.toFixed(2)}€</div>
+                            
+                            <div className="grid grid-cols-2 gap-4 mb-8">
+                                <div className="card p-3"><div className="text-[10px] text-gray-500">ENTRÉES</div><div className="text-green-400">{totalIn.toFixed(2)}€</div></div>
+                                <div className="card p-3"><div className="text-[10px] text-gray-500">SORTIES</div><div className="text-red-400">-{totalOut.toFixed(2)}€</div></div>
                             </div>
-                        )}
 
-                        {currentTab === 'Budget' && (
-                            <div className="flex flex-col items-center">
-                                {!isLimitLocked ? (
-                                    <div className="card p-6 w-full text-center">
-                                        <input type="number" placeholder="Budget Max Mensuel" className="w-full bg-black border border-gray-800 p-3 rounded mb-4 text-white" onChange={(e) => setTempLimit(e.target.value)} />
-                                        <button onClick={() => {setBudgetLimit(parseFloat(tempLimit)); setIsLimitLocked(true);}} className="w-full bg-blue-500 text-black font-bold p-3 rounded text-sm">VERROUILLER LE BUDGET</button>
+                            <div className="text-left">
+                                <h3 className="text-cyan-400 text-sm font-bold mb-4 uppercase italic">Historique</h3>
+                                {transactions.map(t => (
+                                    <div key={t.id} className="card p-3 flex justify-between items-center mb-2">
+                                        <div className="text-sm">{t.desc}</div>
+                                        <div className={`font-bold ${t.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>{t.amount.toFixed(2)}€</div>
                                     </div>
-                                ) : (
-                                    <>
-                                        <CircularProgress size={220} strokeWidth={12} percentage={budgetProgress} color={budgetProgress > 90 ? COLORS.red : COLORS.purple} label="Dépensé" subLabel={`${monthlyExpenses.toFixed(2)}€`} />
-                                        <div className="mt-8 w-full">
-                                            <input type="text" placeholder="Nom de l'opération" value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full bg-black border border-gray-800 p-3 rounded mb-2 text-white" />
-                                            <input type="number" placeholder="Montant" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-black border border-gray-800 p-3 rounded mb-4 text-white" />
-                                            <div className="flex gap-2">
-                                                <button onClick={() => addTx('in')} className="flex-1 bg-emerald-400 text-black font-bold p-3 rounded">GAIN</button>
-                                                <button onClick={() => addTx('out')} className="flex-1 bg-rose-500 text-black font-bold p-3 rounded">DÉPENSE</button>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
+                                ))}
                             </div>
-                        )}
-
-                        {currentTab === 'Calendrier' && (
-                            <div className="w-full text-center">
-                                <h2 className="text-xl font-bold mb-4">Janvier 2026</h2>
-                                <div className="grid grid-cols-7 gap-1">
-                                    {[...Array(31)].map((_, i) => (
-                                        <div key={i} className="card aspect-square flex items-center justify-center text-xs">
-                                            {i + 1}
-                                        </div>
-                                    ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-4">
+                            {!isLimitLocked ? (
+                                <div className="card p-4">
+                                    <input type="number" placeholder="Limite Mensuelle" className="w-full bg-black border border-gray-800 p-2 rounded mb-4" onChange={(e) => setTempLimit(e.target.value)} />
+                                    <button onClick={() => {setBudgetLimit(parseFloat(tempLimit)); setIsLimitLocked(true);}} className="w-full bg-cyan-500 text-black font-bold p-2 rounded">FIXER LA LIMITE</button>
                                 </div>
-                                <p className="mt-4 text-gray-500 text-sm italic text-left px-2">Sélectionnez une date pour voir les détails (Simulation).</p>
-                            </div>
-                        )}
-                    </div>
+                            ) : (
+                                <div className="card p-4">
+                                    <div className="text-center mb-4">Limite : {budgetLimit}€</div>
+                                    <input type="text" placeholder="Nom" value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full bg-black border border-gray-800 p-2 rounded mb-2" />
+                                    <input type="number" placeholder="Montant" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-black border border-gray-800 p-2 rounded mb-4" />
+                                    <div className="flex gap-2">
+                                        <button onClick={() => addTx('in')} className="flex-1 bg-green-500 text-black font-bold p-2 rounded">GAIN</button>
+                                        <button onClick={() => addTx('out')} className="flex-1 bg-red-500 text-black font-bold p-2 rounded">DÉPENSE</button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             );
         }
