@@ -8,14 +8,145 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ZenBudget">
+    
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/6045/6045113.png">
+
     <style>
-        /* Ajustement pour l'encoche (notch) de l'iPhone 14 */
-        body {
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: calc(100px + env(safe-area-inset-bottom));
+        :root {
+            --bg: #050505;
+            --card: #121217;
+            --cyan: #00f2ff;
+            --purple: #7000ff;
+            --green: #00ff88;
+            --red: #ff4d4d;
+            --text: #ffffff;
+            --dim: #888;
         }
-        /* Le reste du CSS reste le même... */
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            /* Gestion de l'encoche et de la barre home de l'iPhone */
+            padding: env(safe-area-inset-top) 20px calc(100px + env(safe-area-inset-bottom)) 20px;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(18, 18, 23, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0 calc(10px + env(safe-area-inset-bottom)) 0;
+            border-top: 1px solid #333;
+            z-index: 1000;
+        }
+
+        .nav-btn { color: var(--dim); border: none; background: none; font-size: 11px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; }
+        .nav-btn.active { color: var(--cyan); }
+
+        /* Écrans */
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Jauge Circulaire */
+        .gauge-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 25px auto;
+        }
+
+        svg { transform: rotate(-90deg); filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.2)); }
+        .circle-bg { fill: none; stroke: #1a1a1a; stroke-width: 12; }
+        .circle-progress {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .gauge-text {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        /* Cartes */
+        .card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #222;
+        }
+
+        .amount-big { font-size: 32px; font-weight: 800; color: var(--cyan); margin: 5px 0; letter-spacing: -1px; }
+        
+        input {
+            width: 100%;
+            padding: 16px;
+            margin: 10px 0;
+            background: #1e1e24;
+            border: 1px solid #333;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        input:focus { border-color: var(--cyan); }
+
+        button.main-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            font-size: 16px;
+            margin-top: 5px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-add { background: var(--green); color: #000; }
+        .btn-rem { background: var(--red); color: #000; }
+        .btn-lock { background: var(--purple); color: #fff; margin-bottom: 10px; }
+        button:disabled { opacity: 0.2; }
+
+        /* Liste Transactions */
+        .tx-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+        .tx-info { font-size: 15px; font-weight: 500; }
+        .tx-date { font-size: 12px; color: var(--dim); margin-top: 2px; }
+
+        /* Calendrier */
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+        .cal-day {
+            padding: 12px 0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #1a1a20;
+            transition: all 0.2s;
+        }
+        .today { background: var(--purple); color: white; border: 1px solid var(--cyan); }
+        .selected { border: 2px solid var(--cyan); background: #2a2a35; }
     </style>
 </head>
 <body>
@@ -82,7 +213,7 @@
     <script>
         // DONNÉES
         let state = JSON.parse(localStorage.getItem('zenbudget_db')) || {
-            base: 1042.52,
+            base: 1047.92,
             limit: 0,
             lockedUntil: null,
             tx: []
