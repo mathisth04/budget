@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ZenBudget B</title>
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/512/00f2ff/b-filled.png">
@@ -20,220 +19,208 @@
             font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--bg); color: var(--text); margin: 0;
             padding: env(safe-area-inset-top) 20px 140px 20px;
-            -webkit-user-select: none; user-select: none;
+            touch-action: manipulation;
         }
 
-        /* Nav */
+        /* Nav Flottante */
         .nav {
-            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
-            width: 85%; height: 65px; background: rgba(30, 30, 35, 0.95);
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 85%; height: 65px; background: rgba(30, 30, 35, 0.98);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             display: flex; justify-content: space-around; align-items: center;
-            border-radius: 35px; border: 1px solid #333; z-index: 2000;
+            border-radius: 35px; border: 1px solid #444; z-index: 10000;
         }
-        .nav-btn { color: var(--dim); border: none; background: none; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 15px; }
-        .nav-btn.active { color: var(--cyan); }
+        .nav-item { color: var(--dim); font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 20px; }
+        .nav-item.active { color: var(--cyan); }
 
         .screen { display: none; }
         .screen.active { display: block; }
 
         /* Jauges */
-        .gauge-box { position: relative; width: 220px; height: 220px; margin: 20px auto; }
-        .gauge-small { width: 150px; height: 150px; }
+        .gauge-area { position: relative; width: 220px; height: 220px; margin: 20px auto; }
+        .small { width: 160px; height: 160px; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .circle-bg { fill: none; stroke: #1a1a1a; stroke-width: 10; }
-        .circle-progress { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
-        .gauge-inner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -45%); text-align: center; width: 100%; }
-        .label { font-size: 10px; color: var(--dim); text-transform: uppercase; }
-        .val { font-size: 24px; font-weight: 800; color: var(--cyan); margin-top: 4px; }
+        .circle-bg { fill: none; stroke: #1a1a1a; stroke-width: 12; }
+        .circle-bar { fill: none; stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+        .gauge-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; pointer-events: none; }
+        .label { font-size: 10px; color: var(--dim); margin-bottom: 5px; }
+        .val { font-size: 24px; font-weight: 800; color: var(--cyan); }
 
-        /* Correction des boutons Budget */
-        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #222; position: relative; }
-        
-        /* Forcer la zone de clic pour iOS */
-        input, .btn-action {
+        /* Cards & Inputs */
+        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #222; }
+        input { 
             width: 100%; padding: 18px; margin: 10px 0; border-radius: 15px;
-            border: none; font-size: 16px; font-weight: 700; box-sizing: border-box;
-            display: block; text-align: center;
-            -webkit-appearance: none; appearance: none;
-            touch-action: manipulation;
+            background: #1e1e24; color: white; border: 1px solid #444; font-size: 16px;
+            box-sizing: border-box; outline: none; -webkit-appearance: none;
         }
-
-        input { background: #1e1e24; color: white; border: 1px solid #444; -webkit-user-select: text; user-select: text; }
         
-        .btn-action { cursor: pointer; position: relative; z-index: 5000; }
-        .btn-action:active { transform: scale(0.96); opacity: 0.8; }
+        /* Boutons stylisés avec ID pour le script */
+        .btn-press {
+            width: 100%; padding: 18px; margin: 10px 0; border-radius: 15px;
+            font-size: 16px; font-weight: 700; text-align: center;
+            display: block; box-sizing: border-box; transition: opacity 0.1s;
+        }
+        .btn-press:active { opacity: 0.6; transform: scale(0.98); }
 
-        .bg-green { background: var(--green); color: #000; }
-        .bg-red { background: var(--red); color: #000; }
-        .bg-purple { background: var(--purple); color: #fff; }
+        .purple { background: var(--purple); color: #fff; }
+        .green { background: var(--green); color: #000; }
+        .red { background: var(--red); color: #000; }
 
         /* Calendrier */
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1a1a20; font-size: 14px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1a1a20; }
         .today { background: var(--purple) !important; color: white; }
-        .selected-day { border: 2px solid var(--cyan) !important; }
-        .tx-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1a1a1a; }
+        .selected { border: 2px solid var(--cyan) !important; }
+
+        .tx-line { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1a1a1a; }
     </style>
 </head>
 <body>
 
     <div id="scr-global" class="screen active">
         <h2 style="text-align:center">Vue Globale</h2>
-        <div class="gauge-box">
-            <svg viewBox="0 0 200 200"><circle class="circle-bg" cx="100" cy="100" r="85"></circle><circle id="gauge-global" class="circle-progress" cx="100" cy="100" r="85" stroke="var(--cyan)"></circle></svg>
-            <div class="gauge-inner"><div class="label">Solde Total</div><div id="val-global-bal" class="val">0€</div></div>
+        <div class="gauge-area">
+            <svg viewBox="0 0 200 200"><circle class="circle-bg" cx="100" cy="100" r="85"></circle><circle id="bar-global" class="circle-bar" cx="100" cy="100" r="85" stroke="var(--cyan)"></circle></svg>
+            <div class="gauge-info"><div class="label">SOLDE TOTAL</div><div id="text-global" class="val">0€</div></div>
         </div>
         <div id="list-global"></div>
     </div>
 
     <div id="scr-budget" class="screen">
         <h2 style="text-align:center">Budget</h2>
-        
         <div class="card">
-            <input type="number" id="in-budget-limit" placeholder="Limite mensuelle">
-            <div id="btn-lock" class="btn-action bg-purple">Valider la limite</div>
-            
-            <div class="gauge-box gauge-small">
-                <svg viewBox="0 0 200 200"><circle class="circle-bg" cx="100" cy="100" r="85"></circle><circle id="gauge-budget" class="circle-progress" cx="100" cy="100" r="85" stroke="var(--purple)"></circle></svg>
-                <div class="gauge-inner"><div class="label">Restant</div><div id="val-budget-left" class="val" style="font-size:18px">0€</div></div>
+            <input type="number" id="in-limit" placeholder="Limite mensuelle">
+            <div id="act-lock" class="btn-press purple">VALIDER LA LIMITE</div>
+            <div class="gauge-area small">
+                <svg viewBox="0 0 200 200"><circle class="circle-bg" cx="100" cy="100" r="85"></circle><circle id="bar-budget" class="circle-bar" cx="100" cy="100" r="85" stroke="var(--purple)"></circle></svg>
+                <div class="gauge-info"><div class="label">RESTANT</div><div id="text-budget" class="val" style="font-size:18px">0€</div></div>
             </div>
         </div>
-
         <div class="card">
-            <input type="text" id="tx-name" placeholder="Nom de l'opération">
-            <input type="number" id="tx-amount" placeholder="Montant">
+            <input type="text" id="in-name" placeholder="Nom">
+            <input type="number" id="in-amount" placeholder="Montant">
             <div style="display:flex; gap:10px">
-                <div id="btn-add" class="btn-action bg-green" style="flex:1">+ Gain</div>
-                <div id="btn-rem" class="btn-action bg-red" style="flex:1">- Perte</div>
+                <div id="act-add" class="btn-press green" style="flex:1">+ GAIN</div>
+                <div id="act-rem" class="btn-press red" style="flex:1">- PERTE</div>
             </div>
         </div>
-        <div id="list-budget"></div>
     </div>
 
     <div id="scr-cal" class="screen">
-        <h2 id="cal-month" style="text-align:center"></h2>
-        <div id="cal-days" class="cal-grid card"></div>
-        <div id="cal-details" class="card">Cliquez sur un jour</div>
+        <h2 id="month-title" style="text-align:center"></h2>
+        <div id="cal-box" class="cal-grid card"></div>
+        <div id="cal-list" class="card"></div>
     </div>
 
     <nav class="nav">
-        <div class="nav-btn active" id="nav-global">Global</div>
-        <div class="nav-btn" id="nav-budget">Budget</div>
-        <div class="nav-btn" id="nav-cal">Calendrier</div>
+        <div class="nav-item active" id="nav-1">Global</div>
+        <div class="nav-item" id="nav-2">Budget</div>
+        <div class="nav-item" id="nav-3">Calendrier</div>
     </nav>
 
     <script>
-        let state = JSON.parse(localStorage.getItem('zenbudget_db')) || {
-            base: 1047.92, limit: 0, lockedUntil: null, tx: []
-        };
+        let db = JSON.parse(localStorage.getItem('zenbudget_db')) || { base: 1047.92, limit: 0, lockedUntil: null, tx: [] };
         const circ = 2 * Math.PI * 85;
 
-        // GESTIONNAIRE D'ÉVÉNEMENTS PHYSIQUES (Indispensable pour iOS Standalone)
-        function bind(id, fn) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            // On utilise touchend pour déclencher l'action à la fin du contact sans latence
-            el.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                fn();
-            });
-            // Fallback pour le clic souris (Safari Desktop)
-            el.addEventListener('click', fn);
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Navigation
-            bind('nav-global', () => switchScr('scr-global', 'nav-global'));
-            bind('nav-budget', () => switchScr('scr-budget', 'nav-budget'));
-            bind('nav-cal', () => switchScr('scr-cal', 'nav-cal'));
+        // --- CŒUR DU SYSTÈME : DÉLÉGATION GLOBALE ---
+        // Cette fonction intercepte TOUS les touchers sur l'écran et regarde si on a touché un bouton.
+        document.body.addEventListener('touchstart', function(e) {
+            const id = e.target.id;
             
-            // Actions Budget
-            bind('btn-add', () => addTransaction('in'));
-            bind('btn-rem', () => addTransaction('out'));
-            bind('btn-lock', validateLimit);
+            // Navigation
+            if(id === 'nav-1') show('scr-global', 'nav-1');
+            if(id === 'nav-2') show('scr-budget', 'nav-2');
+            if(id === 'nav-3') show('scr-cal', 'nav-3');
+            
+            // Actions
+            if(id === 'act-add') doTx('gain');
+            if(id === 'act-rem') doTx('loss');
+            if(id === 'act-lock') doLock();
+            
+            // Calendrier (clic sur un jour)
+            if(e.target.classList.contains('cal-day')) {
+                document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+                e.target.classList.add('selected');
+                showDay(e.target.getAttribute('data-date'));
+            }
+        }, {passive: true});
 
-            refreshUI();
-        });
-
-        function switchScr(sId, bId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(sId).classList.add('active');
-            document.getElementById(bId).classList.add('active');
-            if(sId === 'scr-cal') renderCalendar();
+        function show(s, n) {
+            document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+            document.getElementById(s).classList.add('active');
+            document.getElementById(n).classList.add('active');
+            if(s === 'scr-cal') renderCal();
         }
 
-        function addTransaction(type) {
-            const n = document.getElementById('tx-name').value;
-            const a = parseFloat(document.getElementById('tx-amount').value);
-            if(!n || isNaN(a)) { alert("Entrez un nom et un montant"); return; }
-            state.tx.push({ name: n, amount: type === 'out' ? -a : a, date: new Date().toISOString() });
-            document.getElementById('tx-name').value = '';
-            document.getElementById('tx-amount').value = '';
+        function doTx(type) {
+            const n = document.getElementById('in-name').value;
+            const a = parseFloat(document.getElementById('in-amount').value);
+            if(!n || isNaN(a)) return;
+            db.tx.push({ name: n, amount: type === 'loss' ? -a : a, date: new Date().toISOString() });
+            document.getElementById('in-name').value = '';
+            document.getElementById('in-amount').value = '';
             save();
         }
 
-        function validateLimit() {
-            if(document.getElementById('btn-lock').style.opacity === "0.5") return;
-            const val = parseFloat(document.getElementById('in-budget-limit').value);
-            if(isNaN(val)) return;
-            state.limit = val;
-            state.lockedUntil = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString();
+        function doLock() {
+            const v = parseFloat(document.getElementById('in-limit').value);
+            if(isNaN(v)) return;
+            db.limit = v;
+            db.lockedUntil = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString();
             save();
         }
 
         function save() {
-            localStorage.setItem('zenbudget_db', JSON.stringify(state));
-            refreshUI();
+            localStorage.setItem('zenbudget_db', JSON.stringify(db));
+            ui();
         }
 
-        function refreshUI() {
+        function ui() {
             const now = new Date();
-            const totalIn = state.tx.filter(t => t.amount > 0).reduce((a, b) => a + b.amount, 0);
-            const totalOut = state.tx.filter(t => t.amount < 0).reduce((a, b) => a + Math.abs(b.amount), 0);
-            const bal = state.base + totalIn - totalOut;
+            const totalIn = db.tx.filter(t => t.amount > 0).reduce((a, b) => a + b.amount, 0);
+            const totalOut = db.tx.filter(t => t.amount < 0).reduce((a, b) => a + Math.abs(b.amount), 0);
+            const bal = db.base + totalIn - totalOut;
             
-            document.getElementById('val-global-bal').innerText = bal.toFixed(2) + '€';
-            const gPct = Math.min(100, (bal / 2000) * 100);
-            document.getElementById('gauge-global').style.strokeDasharray = circ;
-            document.getElementById('gauge-global').style.strokeDashoffset = circ - (gPct / 100) * circ;
+            document.getElementById('text-global').innerText = bal.toFixed(2) + '€';
+            document.getElementById('bar-global').style.strokeDasharray = circ;
+            document.getElementById('bar-global').style.strokeDashoffset = circ - (Math.min(100, (bal/2000)*100)/100)*circ;
 
-            const spent = state.tx.filter(t => new Date(t.date).getMonth() === now.getMonth() && t.amount < 0).reduce((a, b) => a + Math.abs(b.amount), 0);
-            const left = state.limit - spent;
-            document.getElementById('val-budget-left').innerText = left.toFixed(2) + '€';
-            const bPct = state.limit > 0 ? Math.max(0, (left / state.limit) * 100) : 0;
-            document.getElementById('gauge-budget').style.strokeDasharray = circ;
-            document.getElementById('gauge-budget').style.strokeDashoffset = circ - (bPct / 100) * circ;
+            const spent = db.tx.filter(t => new Date(t.date).getMonth() === now.getMonth() && t.amount < 0).reduce((a, b) => a + Math.abs(b.amount), 0);
+            const left = db.limit - spent;
+            document.getElementById('text-budget').innerText = left.toFixed(2) + '€';
+            document.getElementById('bar-budget').style.strokeDasharray = circ;
+            document.getElementById('bar-budget').style.strokeDashoffset = circ - (db.limit > 0 ? Math.max(0, (left/db.limit)*100)/100 : 1)*circ;
 
-            const isLocked = state.lockedUntil && new Date(state.lockedUntil) > now;
-            document.getElementById('btn-lock').style.opacity = isLocked ? "0.5" : "1";
-            document.getElementById('in-budget-limit').disabled = isLocked;
+            const lock = db.lockedUntil && new Date(db.lockedUntil) > now;
+            document.getElementById('act-lock').style.opacity = lock ? "0.3" : "1";
+            document.getElementById('in-limit').disabled = lock;
 
-            const list = state.tx.slice(-5).reverse().map(t => `
-                <div class="tx-item"><span>${t.name}</span><b style="color:${t.amount > 0 ? 'var(--green)' : 'var(--red)'}">${t.amount.toFixed(2)}€</b></div>`).join('');
-            document.getElementById('list-global').innerHTML = list;
-            document.getElementById('list-budget').innerHTML = list;
+            const html = db.tx.slice(-5).reverse().map(t => `<div class="tx-line"><span>${t.name}</span><b style="color:${t.amount > 0 ? 'var(--green)' : 'var(--red)'}">${t.amount}€</b></div>`).join('');
+            document.getElementById('list-global').innerHTML = html;
         }
 
-        function renderCalendar() {
-            const grid = document.getElementById('cal-days'); grid.innerHTML = '';
+        function renderCal() {
+            const box = document.getElementById('cal-box'); box.innerHTML = '';
             const now = new Date();
-            document.getElementById('cal-month').innerText = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+            document.getElementById('month-title').innerText = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
             for(let i = 1; i <= 31; i++) {
                 const d = new Date(now.getFullYear(), now.getMonth(), i);
                 if(d.getMonth() !== now.getMonth()) break;
                 const day = document.createElement('div');
                 day.innerText = i; day.className = 'cal-day' + (d.toDateString() === now.toDateString() ? ' today' : '');
-                day.addEventListener('click', () => {
-                    document.querySelectorAll('.cal-day').forEach(el => el.classList.remove('selected-day'));
-                    day.classList.add('selected-day');
-                    const dayTx = state.tx.filter(t => new Date(t.date).toDateString() === d.toDateString());
-                    document.getElementById('cal-details').innerHTML = dayTx.length ? dayTx.map(t => `<div class="tx-item"><span>${t.name}</span><b>${t.amount}€</b></div>`).join('') : "Rien.";
-                });
-                grid.appendChild(day);
+                day.setAttribute('data-date', d.toDateString());
+                day.id = 'day-' + i; // Un ID unique pour aider le toucher
+                box.appendChild(day);
             }
         }
+
+        function showDay(dateStr) {
+            const txs = db.tx.filter(t => new Date(t.date).toDateString() === dateStr);
+            document.getElementById('cal-list').innerHTML = txs.length ? txs.map(t => `<div class="tx-line"><span>${t.name}</span><b>${t.amount}€</b></div>`).join('') : "Rien.";
+        }
+
+        ui();
     </script>
 </body>
 </html>
