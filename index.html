@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ZenBudget">
     
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2534/2534183.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/8206/8206933.png">
 
     <style>
         :root {
@@ -28,29 +28,29 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: env(safe-area-inset-top) 20px calc(110px + env(safe-area-inset-bottom)) 20px;
+            padding: env(safe-area-inset-top) 20px calc(120px + env(safe-area-inset-bottom)) 20px;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Navigation centrée et symétrique */
+        /* Navigation flottante, centrée et symétrique */
         .nav {
             position: fixed;
-            bottom: 25px; /* Décollée du bord pour un look flottant moderne */
+            bottom: 35px; 
             left: 50%;
             transform: translateX(-50%);
-            width: 85%; /* Largeur réduite pour centrer les boutons */
-            max-width: 400px;
-            background: rgba(25, 25, 30, 0.9);
+            width: 75%; /* Resserré pour plus de centralité */
+            max-width: 350px;
+            background: rgba(20, 20, 25, 0.85);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             display: flex;
-            justify-content: space-evenly; /* Symétrie parfaite */
+            justify-content: space-evenly;
             align-items: center;
-            padding: 12px 10px;
-            border-radius: 30px; /* Bords très arrondis */
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px 5px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
         }
 
         .nav-btn { 
@@ -60,106 +60,53 @@
             font-size: 10px; 
             font-weight: 700; 
             text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 8px 12px;
-            transition: all 0.3s ease;
+            letter-spacing: 1.2px;
+            padding: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
 
         .nav-btn.active { 
             color: var(--cyan);
-            transform: scale(1.1);
         }
 
-        /* Écrans */
+        /* Petit indicateur sous le bouton actif */
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: var(--cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--cyan);
+        }
+
+        /* --- Le reste du CSS (Screens, Gauges, Cards) reste identique --- */
         .screen { display: none; }
-        .screen.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1); }
+        .screen.active { display: block; animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Jauge Circulaire */
-        .gauge-container {
-            position: relative;
-            width: 220px;
-            height: 220px;
-            margin: 30px auto;
-        }
-
+        .gauge-container { position: relative; width: 220px; height: 220px; margin: 30px auto; }
         svg { transform: rotate(-90deg); }
         .circle-bg { fill: none; stroke: #1a1a1a; stroke-width: 10; }
-        .circle-progress {
-            fill: none;
-            stroke-width: 10;
-            stroke-linecap: round;
-            transition: stroke-dashoffset 1s ease-in-out;
-        }
+        .circle-progress { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+        .gauge-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
 
-        .gauge-text {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-        }
-
-        /* Cartes */
-        .card {
-            background: var(--card);
-            border-radius: 24px;
-            padding: 22px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
+        .card { background: var(--card); border-radius: 24px; padding: 22px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
         .amount-big { font-size: 34px; font-weight: 800; color: var(--cyan); margin: 5px 0; letter-spacing: -1.5px; }
         
-        input {
-            width: 100%;
-            padding: 16px;
-            margin: 10px 0;
-            background: #1e1e24;
-            border: 1px solid #333;
-            border-radius: 14px;
-            color: white;
-            font-size: 16px;
-            box-sizing: border-box;
-            outline: none;
-        }
-
-        button.main-btn {
-            width: 100%;
-            padding: 16px;
-            border-radius: 14px;
-            border: none;
-            font-weight: 800;
-            font-size: 15px;
-            margin-top: 8px;
-        }
-
+        input { width: 100%; padding: 16px; margin: 10px 0; background: #1e1e24; border: 1px solid #333; border-radius: 14px; color: white; font-size: 16px; box-sizing: border-box; outline: none; }
+        button.main-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 800; font-size: 15px; margin-top: 8px; }
         .btn-add { background: var(--green); color: #000; }
         .btn-rem { background: var(--red); color: #000; }
         .btn-lock { background: var(--purple); color: #fff; margin-bottom: 12px; }
 
-        .tx-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 0;
-            border-bottom: 1px solid #1a1a1a;
-        }
-
-        .cal-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 12px;
-        }
-
-        .cal-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 14px;
-            background: #1a1a20;
-        }
+        .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #1a1a1a; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; background: #1a1a20; }
         .today { background: var(--purple); color: white; box-shadow: 0 0 15px var(--purple); }
         .selected { border: 2px solid var(--cyan); }
     </style>
