@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZenBudget Pro</title>
+    <title>ZenBudget B</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ZenBudget">
     
     <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/512/00f2ff/b-filled.png">
 
@@ -28,26 +27,23 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: env(safe-area-inset-top) 20px 140px 20px;
-            -webkit-tap-highlight-color: transparent;
+            padding: env(safe-area-inset-top) 20px calc(100px + env(safe-area-inset-bottom)) 20px;
+            overflow-x: hidden;
         }
 
-        /* Navigation - Ajustée pour ne pas bloquer les clics */
+        /* NAVIGATION CORRIGÉE : Position fixe en bas sans blocage */
         .nav {
             position: fixed;
-            bottom: 30px; 
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            max-width: 350px;
-            background: rgba(20, 20, 25, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            bottom: 0; left: 0; right: 0;
+            height: calc(70px + env(safe-area-inset-bottom));
+            background: rgba(18, 18, 23, 0.98);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             display: flex;
             justify-content: space-around;
-            padding: 12px 5px;
-            border-radius: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            align-items: flex-start;
+            padding-top: 15px;
+            border-top: 1px solid #222;
             z-index: 9999;
         }
 
@@ -55,37 +51,41 @@
             color: var(--dim); 
             border: none; 
             background: none; 
-            font-size: 10px; 
+            font-size: 11px; 
             font-weight: 700; 
             text-transform: uppercase;
-            padding: 10px;
+            padding: 10px 20px;
         }
 
-        .nav-btn.active { color: var(--cyan); }
+        .nav-btn.active { color: var(--cyan); position: relative; }
+        .nav-btn.active::after {
+            content: ''; position: absolute; bottom: 0; left: 50%;
+            transform: translateX(-50%); width: 4px; height: 4px;
+            background: var(--cyan); border-radius: 50%; box-shadow: 0 0 8px var(--cyan);
+        }
 
-        /* Écrans */
-        .screen { display: none; padding-top: 20px; }
-        .screen.active { display: block; }
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Jauge Globale (Plus Grande) */
+        /* JAUGE GLOBALE (Texte bien au centre) */
         .gauge-container-main {
             position: relative;
-            width: 280px;
-            height: 280px;
-            margin: 20px auto;
+            width: 260px;
+            height: 260px;
+            margin: 30px auto;
         }
 
-        /* Jauge Budget (Plus Petite) */
         .gauge-container-small {
             position: relative;
-            width: 180px;
-            height: 180px;
+            width: 160px;
+            height: 160px;
             margin: 10px auto;
         }
 
         svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .circle-bg { fill: none; stroke: #1a1a1a; stroke-width: 8; }
-        .circle-progress { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+        .circle-bg { fill: none; stroke: #1a1a1a; stroke-width: 10; }
+        .circle-progress { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
 
         .gauge-text {
             position: absolute;
@@ -93,38 +93,60 @@
             transform: translate(-50%, -50%);
             text-align: center;
             width: 100%;
+            pointer-events: none; /* Ne bloque pas le clic à travers */
         }
 
-        .label-above { font-size: 12px; color: var(--dim); text-transform: uppercase; margin-bottom: 5px; }
-        .amount-center { font-size: 28px; font-weight: 800; color: var(--cyan); display: block; }
+        .label-above { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+        .amount-center { font-size: 26px; font-weight: 800; color: var(--cyan); display: block; }
 
-        /* Cartes */
+        /* CARTES ET INPUTS */
         .card {
             background: var(--card);
             border-radius: 20px;
-            padding: 15px;
+            padding: 20px;
             margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.05);
-            position: relative;
-            z-index: 10; /* Assure que les inputs sont cliquables */
+            border: 1px solid #222;
         }
 
         input, button.main-btn {
             width: 100%;
-            padding: 14px;
+            padding: 15px;
             margin: 8px 0;
             border-radius: 12px;
             border: none;
             font-size: 16px;
             box-sizing: border-box;
-            display: block;
+            -webkit-appearance: none; /* Reset pour iPhone */
         }
 
         input { background: #1e1e24; color: white; border: 1px solid #333; }
-        button.main-btn { font-weight: 800; cursor: pointer; }
-        .btn-add { background: var(--green); color: #000; }
-        .btn-rem { background: var(--red); color: #000; }
-        .btn-lock { background: var(--purple); color: #fff; }
+        button.main-btn { font-weight: 800; color: #000; }
+        .btn-add { background: var(--green); }
+        .btn-rem { background: var(--red); }
+        .btn-lock { background: var(--purple); color: white; }
+
+        /* CALENDRIER CORRIGÉ */
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            background: var(--card);
+            padding: 15px;
+            border-radius: 20px;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+
+        .today { background: var(--purple) !important; color: white; font-weight: bold; }
+        .selected-day { border: 2px solid var(--cyan) !important; }
 
         .tx-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1a1a1a; }
     </style>
@@ -139,30 +161,26 @@
                 <circle id="gauge-global" class="circle-progress" cx="100" cy="100" r="85" stroke="var(--cyan)"></circle>
             </svg>
             <div class="gauge-text">
-                <span class="label-above">Solde Total</span>
-                <span id="val-global-bal" class="amount-center">0€</span>
+                <div class="label-above">Solde Total</div>
+                <div id="val-global-bal" class="amount-center">0€</div>
             </div>
         </div>
-        <div style="display:flex; justify-content:space-around; text-align:center">
-            <div><small>GAINS</small><br><span id="val-global-in" style="color:var(--green); font-weight:bold">0€</span></div>
-            <div><small>DÉPENSES</small><br><span id="val-global-out" style="color:var(--red); font-weight:bold">0€</span></div>
-        </div>
-        <div id="list-global" style="margin-top:20px"></div>
+        <div id="list-global"></div>
     </div>
 
     <div id="scr-budget" class="screen">
-        <h2 style="text-align:center">Mon Budget</h2>
-        <div class="card" style="padding: 10px;">
-            <input type="number" id="in-budget-limit" placeholder="Limite">
-            <button id="btn-lock" class="main-btn btn-lock" onclick="lockBudget()">Valider</button>
+        <h2 style="text-align:center">Budget</h2>
+        <div class="card">
+            <input type="number" id="in-budget-limit" placeholder="Définir limite">
+            <button id="btn-lock" class="main-btn btn-lock" onclick="lockBudget()">Valider Limite</button>
             <div class="gauge-container-small">
                 <svg viewBox="0 0 200 200">
                     <circle class="circle-bg" cx="100" cy="100" r="85"></circle>
                     <circle id="gauge-budget" class="circle-progress" cx="100" cy="100" r="85" stroke="var(--purple)"></circle>
                 </svg>
                 <div class="gauge-text">
-                    <span class="label-above">Restant</span>
-                    <span id="val-budget-left" class="amount-center" style="font-size:20px">0€</span>
+                    <div class="label-above">Restant</div>
+                    <div id="val-budget-left" class="amount-center" style="font-size:20px">0€</div>
                 </div>
             </div>
         </div>
@@ -170,17 +188,17 @@
             <input type="text" id="tx-name" placeholder="Nom">
             <input type="number" id="tx-amount" placeholder="Montant">
             <div style="display:flex; gap:10px">
-                <button class="main-btn btn-add" onclick="addTx('in')">+ In</button>
-                <button class="main-btn btn-rem" onclick="addTx('out')">- Out</button>
+                <button class="main-btn btn-add" onclick="addTx('in')">+ Gain</button>
+                <button class="main-btn btn-rem" onclick="addTx('out')">- Perte</button>
             </div>
         </div>
         <div id="list-budget"></div>
     </div>
 
     <div id="scr-cal" class="screen">
-        <h2 id="cal-month" style="text-align:center">Janvier</h2>
-        <div id="cal-days" style="display:grid; grid-template-columns:repeat(7,1fr); gap:5px; background:var(--card); padding:15px; border-radius:20px"></div>
-        <div id="cal-details" class="card" style="margin-top:15px">Sélectionnez un jour</div>
+        <h2 id="cal-month" style="text-align:center"></h2>
+        <div id="cal-days" class="cal-grid"></div>
+        <div id="cal-details" class="card" style="margin-top:20px">Cliquez sur un jour</div>
     </div>
 
     <nav class="nav">
@@ -237,10 +255,7 @@
             const bal = state.base + totalIn - totalOut;
             
             document.getElementById('val-global-bal').innerText = bal.toFixed(2) + '€';
-            document.getElementById('val-global-in').innerText = totalIn.toFixed(2) + '€';
-            document.getElementById('val-global-out').innerText = totalOut.toFixed(2) + '€';
-            
-            updateCircle('gauge-global', Math.min(100, (bal / (state.base * 2)) * 100));
+            updateCircle('gauge-global', Math.min(100, (bal / 2000) * 100));
 
             const spent = state.tx.filter(t => new Date(t.date).getMonth() === new Date().getMonth() && t.amount < 0)
                                  .reduce((a, b) => a + Math.abs(b.amount), 0);
@@ -266,7 +281,7 @@
             document.getElementById(id).innerHTML = items.slice(-5).reverse().map(t => `
                 <div class="tx-item">
                     <span>${t.name} <br><small style="color:var(--dim)">${new Date(t.date).toLocaleDateString()}</small></span>
-                    <b style="color:${t.amount > 0 ? 'var(--green)' : 'var(--red)'}">${t.amount}€</b>
+                    <b style="color:${t.amount > 0 ? 'var(--green)' : 'var(--red)'}">${t.amount > 0 ? '+' : ''}${t.amount}€</b>
                 </div>
             `).join('');
         }
@@ -275,23 +290,34 @@
             const grid = document.getElementById('cal-days');
             grid.innerHTML = '';
             const now = new Date();
+            document.getElementById('cal-month').innerText = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+            
             for(let i = 1; i <= 31; i++) {
                 const d = new Date(now.getFullYear(), now.getMonth(), i);
                 if(d.getMonth() !== now.getMonth()) break;
+                
                 const day = document.createElement('div');
                 day.innerText = i;
-                day.style.padding = "10px";
-                day.style.textAlign = "center";
-                day.style.borderRadius = "50%";
-                if(d.toDateString() === now.toDateString()) day.style.background = "var(--purple)";
-                day.onclick = () => showDay(d);
+                day.className = 'cal-day';
+                if(d.toDateString() === now.toDateString()) day.classList.add('today');
+                
+                day.onclick = (e) => {
+                    document.querySelectorAll('.cal-day').forEach(el => el.classList.remove('selected-day'));
+                    day.classList.add('selected-day');
+                    showDay(d);
+                };
                 grid.appendChild(day);
             }
         }
 
         function showDay(date) {
             const txs = state.tx.filter(t => new Date(t.date).toDateString() === date.toDateString());
-            document.getElementById('cal-details').innerHTML = txs.map(t => `<div>${t.name}: ${t.amount}€</div>`).join('') || "Rien";
+            document.getElementById('cal-details').innerHTML = txs.length ? txs.map(t => `
+                <div class="tx-item">
+                    <span>${t.name}</span>
+                    <b style="color:${t.amount > 0 ? 'var(--green)' : 'var(--red)'}">${t.amount}€</b>
+                </div>
+            `).join('') : "Aucune opération.";
         }
 
         refresh();
