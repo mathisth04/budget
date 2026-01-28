@@ -19,61 +19,60 @@
         body {
             font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--bg); color: var(--text); margin: 0;
-            padding: env(safe-area-inset-top) 20px calc(110px + env(safe-area-inset-bottom)) 20px;
-            user-select: none; -webkit-user-select: none; touch-action: manipulation;
+            padding: env(safe-area-inset-top) 20px 140px 20px;
+            -webkit-user-select: none; user-select: none;
         }
 
-        /* Nav corrigée pour iOS Standalone */
+        /* Nav */
         .nav {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            height: calc(80px + env(safe-area-inset-bottom));
-            background: #101014; display: flex; justify-content: space-around;
-            border-top: 1px solid #222; z-index: 10000;
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            width: 85%; height: 65px; background: rgba(30, 30, 35, 0.95);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: flex; justify-content: space-around; align-items: center;
+            border-radius: 35px; border: 1px solid #333; z-index: 2000;
         }
-
-        .nav-btn { 
-            color: var(--dim); border: none; background: none; 
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            flex: 1; padding-bottom: env(safe-area-inset-bottom);
-        }
-
+        .nav-btn { color: var(--dim); border: none; background: none; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 15px; }
         .nav-btn.active { color: var(--cyan); }
 
         .screen { display: none; }
         .screen.active { display: block; }
 
-        /* Jauges et Centrage */
-        .gauge-box { position: relative; width: 240px; height: 240px; margin: 20px auto; }
-        .gauge-small { width: 170px; height: 170px; }
+        /* Jauges */
+        .gauge-box { position: relative; width: 220px; height: 220px; margin: 20px auto; }
+        .gauge-small { width: 150px; height: 150px; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; }
         .circle-bg { fill: none; stroke: #1a1a1a; stroke-width: 10; }
         .circle-progress { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+        .gauge-inner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -45%); text-align: center; width: 100%; }
+        .label { font-size: 10px; color: var(--dim); text-transform: uppercase; }
+        .val { font-size: 24px; font-weight: 800; color: var(--cyan); margin-top: 4px; }
 
-        .gauge-inner {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40%);
-            text-align: center; width: 100%; pointer-events: none;
-        }
-
-        .label { font-size: 11px; color: var(--dim); text-transform: uppercase; }
-        .val { font-size: 26px; font-weight: 800; color: var(--cyan); margin-top: 5px; }
-
-        /* UI Elements */
-        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #222; }
-        input, .action-btn {
-            width: 100%; padding: 16px; margin: 8px 0; border-radius: 14px;
+        /* Correction des boutons Budget */
+        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #222; position: relative; }
+        
+        /* Forcer la zone de clic pour iOS */
+        input, .btn-action {
+            width: 100%; padding: 18px; margin: 10px 0; border-radius: 15px;
             border: none; font-size: 16px; font-weight: 700; box-sizing: border-box;
+            display: block; text-align: center;
+            -webkit-appearance: none; appearance: none;
+            touch-action: manipulation;
         }
-        input { background: #1e1e24; color: white; border: 1px solid #333; outline: none; }
-        .btn-add { background: var(--green); color: #000; }
-        .btn-rem { background: var(--red); color: #000; }
-        .btn-lock { background: var(--purple); color: #fff; }
+
+        input { background: #1e1e24; color: white; border: 1px solid #444; -webkit-user-select: text; user-select: text; }
+        
+        .btn-action { cursor: pointer; position: relative; z-index: 5000; }
+        .btn-action:active { transform: scale(0.96); opacity: 0.8; }
+
+        .bg-green { background: var(--green); color: #000; }
+        .bg-red { background: var(--red); color: #000; }
+        .bg-purple { background: var(--purple); color: #fff; }
 
         /* Calendrier */
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1a1a20; }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1a1a20; font-size: 14px; }
         .today { background: var(--purple) !important; color: white; }
         .selected-day { border: 2px solid var(--cyan) !important; }
-
         .tx-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1a1a1a; }
     </style>
 </head>
@@ -82,40 +81,31 @@
     <div id="scr-global" class="screen active">
         <h2 style="text-align:center">Vue Globale</h2>
         <div class="gauge-box">
-            <svg viewBox="0 0 200 200">
-                <circle class="circle-bg" cx="100" cy="100" r="85"></circle>
-                <circle id="gauge-global" class="circle-progress" cx="100" cy="100" r="85" stroke="var(--cyan)"></circle>
-            </svg>
-            <div class="gauge-inner">
-                <div class="label">Solde Total</div>
-                <div id="val-global-bal" class="val">0€</div>
-            </div>
+            <svg viewBox="0 0 200 200"><circle class="circle-bg" cx="100" cy="100" r="85"></circle><circle id="gauge-global" class="circle-progress" cx="100" cy="100" r="85" stroke="var(--cyan)"></circle></svg>
+            <div class="gauge-inner"><div class="label">Solde Total</div><div id="val-global-bal" class="val">0€</div></div>
         </div>
         <div id="list-global"></div>
     </div>
 
     <div id="scr-budget" class="screen">
         <h2 style="text-align:center">Budget</h2>
+        
         <div class="card">
-            <input type="number" id="in-budget-limit" placeholder="Limite">
-            <button id="btn-lock" class="action-btn btn-lock">Valider la limite</button>
+            <input type="number" id="in-budget-limit" placeholder="Limite mensuelle">
+            <div id="btn-lock" class="btn-action bg-purple">Valider la limite</div>
+            
             <div class="gauge-box gauge-small">
-                <svg viewBox="0 0 200 200">
-                    <circle class="circle-bg" cx="100" cy="100" r="85"></circle>
-                    <circle id="gauge-budget" class="circle-progress" cx="100" cy="100" r="85" stroke="var(--purple)"></circle>
-                </svg>
-                <div class="gauge-inner">
-                    <div class="label">Restant</div>
-                    <div id="val-budget-left" class="val" style="font-size:18px">0€</div>
-                </div>
+                <svg viewBox="0 0 200 200"><circle class="circle-bg" cx="100" cy="100" r="85"></circle><circle id="gauge-budget" class="circle-progress" cx="100" cy="100" r="85" stroke="var(--purple)"></circle></svg>
+                <div class="gauge-inner"><div class="label">Restant</div><div id="val-budget-left" class="val" style="font-size:18px">0€</div></div>
             </div>
         </div>
+
         <div class="card">
-            <input type="text" id="tx-name" placeholder="Nom">
+            <input type="text" id="tx-name" placeholder="Nom de l'opération">
             <input type="number" id="tx-amount" placeholder="Montant">
             <div style="display:flex; gap:10px">
-                <button id="btn-add" class="action-btn btn-add">+ Gain</button>
-                <button id="btn-rem" class="action-btn btn-rem">- Perte</button>
+                <div id="btn-add" class="btn-action bg-green" style="flex:1">+ Gain</div>
+                <div id="btn-rem" class="btn-action bg-red" style="flex:1">- Perte</div>
             </div>
         </div>
         <div id="list-budget"></div>
@@ -124,13 +114,13 @@
     <div id="scr-cal" class="screen">
         <h2 id="cal-month" style="text-align:center"></h2>
         <div id="cal-days" class="cal-grid card"></div>
-        <div id="cal-details" class="card">Sélectionnez un jour</div>
+        <div id="cal-details" class="card">Cliquez sur un jour</div>
     </div>
 
     <nav class="nav">
-        <button class="nav-btn active" data-scr="scr-global">Global</button>
-        <button class="nav-btn" data-scr="scr-budget">Budget</button>
-        <button class="nav-btn" data-scr="scr-cal">Calendrier</button>
+        <div class="nav-btn active" id="nav-global">Global</div>
+        <div class="nav-btn" id="nav-budget">Budget</div>
+        <div class="nav-btn" id="nav-cal">Calendrier</div>
     </nav>
 
     <script>
@@ -139,55 +129,66 @@
         };
         const circ = 2 * Math.PI * 85;
 
-        // GESTIONNAIRE D'ÉVÉNEMENTS ROBUSTE
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // Navigation
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.addEventListener('touchstart', (e) => {
-                    const scrId = btn.getAttribute('data-scr');
-                    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                    document.getElementById(scrId).classList.add('active');
-                    btn.classList.add('active');
-                    if(scrId === 'scr-cal') renderCal();
-                });
+        // GESTIONNAIRE D'ÉVÉNEMENTS PHYSIQUES (Indispensable pour iOS Standalone)
+        function bind(id, fn) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            // On utilise touchend pour déclencher l'action à la fin du contact sans latence
+            el.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                fn();
             });
+            // Fallback pour le clic souris (Safari Desktop)
+            el.addEventListener('click', fn);
+        }
 
-            // Boutons d'action
-            document.getElementById('btn-add').addEventListener('touchstart', () => addTx('in'));
-            document.getElementById('btn-rem').addEventListener('touchstart', () => addTx('out'));
-            document.getElementById('btn-lock').addEventListener('touchstart', lockBudget);
+        document.addEventListener('DOMContentLoaded', () => {
+            // Navigation
+            bind('nav-global', () => switchScr('scr-global', 'nav-global'));
+            bind('nav-budget', () => switchScr('scr-budget', 'nav-budget'));
+            bind('nav-cal', () => switchScr('scr-cal', 'nav-cal'));
+            
+            // Actions Budget
+            bind('btn-add', () => addTransaction('in'));
+            bind('btn-rem', () => addTransaction('out'));
+            bind('btn-lock', validateLimit);
 
-            refresh();
+            refreshUI();
         });
 
-        function addTx(type) {
+        function switchScr(sId, bId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(sId).classList.add('active');
+            document.getElementById(bId).classList.add('active');
+            if(sId === 'scr-cal') renderCalendar();
+        }
+
+        function addTransaction(type) {
             const n = document.getElementById('tx-name').value;
             const a = parseFloat(document.getElementById('tx-amount').value);
-            if(!n || isNaN(a)) return;
+            if(!n || isNaN(a)) { alert("Entrez un nom et un montant"); return; }
             state.tx.push({ name: n, amount: type === 'out' ? -a : a, date: new Date().toISOString() });
             document.getElementById('tx-name').value = '';
             document.getElementById('tx-amount').value = '';
             save();
         }
 
-        function lockBudget() {
-            if(document.getElementById('btn-lock').disabled) return;
+        function validateLimit() {
+            if(document.getElementById('btn-lock').style.opacity === "0.5") return;
             const val = parseFloat(document.getElementById('in-budget-limit').value);
             if(isNaN(val)) return;
             state.limit = val;
-            let d = new Date();
-            state.lockedUntil = new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString();
+            state.lockedUntil = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString();
             save();
         }
 
         function save() {
             localStorage.setItem('zenbudget_db', JSON.stringify(state));
-            refresh();
+            refreshUI();
         }
 
-        function refresh() {
+        function refreshUI() {
             const now = new Date();
             const totalIn = state.tx.filter(t => t.amount > 0).reduce((a, b) => a + b.amount, 0);
             const totalOut = state.tx.filter(t => t.amount < 0).reduce((a, b) => a + Math.abs(b.amount), 0);
@@ -206,19 +207,16 @@
             document.getElementById('gauge-budget').style.strokeDashoffset = circ - (bPct / 100) * circ;
 
             const isLocked = state.lockedUntil && new Date(state.lockedUntil) > now;
-            document.getElementById('btn-lock').disabled = isLocked;
+            document.getElementById('btn-lock').style.opacity = isLocked ? "0.5" : "1";
             document.getElementById('in-budget-limit').disabled = isLocked;
 
-            const listHtml = state.tx.slice(-5).reverse().map(t => `
-                <div class="tx-item">
-                    <span>${t.name}<br><small style="color:var(--dim)">${new Date(t.date).toLocaleDateString()}</small></span>
-                    <b style="color:${t.amount > 0 ? 'var(--green)' : 'var(--red)'}">${t.amount > 0 ? '+' : ''}${t.amount}€</b>
-                </div>`).join('');
-            document.getElementById('list-global').innerHTML = listHtml;
-            document.getElementById('list-budget').innerHTML = listHtml;
+            const list = state.tx.slice(-5).reverse().map(t => `
+                <div class="tx-item"><span>${t.name}</span><b style="color:${t.amount > 0 ? 'var(--green)' : 'var(--red)'}">${t.amount.toFixed(2)}€</b></div>`).join('');
+            document.getElementById('list-global').innerHTML = list;
+            document.getElementById('list-budget').innerHTML = list;
         }
 
-        function renderCal() {
+        function renderCalendar() {
             const grid = document.getElementById('cal-days'); grid.innerHTML = '';
             const now = new Date();
             document.getElementById('cal-month').innerText = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
@@ -227,19 +225,14 @@
                 if(d.getMonth() !== now.getMonth()) break;
                 const day = document.createElement('div');
                 day.innerText = i; day.className = 'cal-day' + (d.toDateString() === now.toDateString() ? ' today' : '');
-                day.addEventListener('touchstart', () => {
+                day.addEventListener('click', () => {
                     document.querySelectorAll('.cal-day').forEach(el => el.classList.remove('selected-day'));
                     day.classList.add('selected-day');
-                    showDay(d);
+                    const dayTx = state.tx.filter(t => new Date(t.date).toDateString() === d.toDateString());
+                    document.getElementById('cal-details').innerHTML = dayTx.length ? dayTx.map(t => `<div class="tx-item"><span>${t.name}</span><b>${t.amount}€</b></div>`).join('') : "Rien.";
                 });
                 grid.appendChild(day);
             }
-        }
-
-        function showDay(date) {
-            const txs = state.tx.filter(t => new Date(t.date).toDateString() === date.toDateString());
-            document.getElementById('cal-details').innerHTML = txs.length ? txs.map(t => `
-                <div class="tx-item"><span>${t.name}</span><b>${t.amount}€</b></div>`).join('') : "Aucune opération.";
         }
     </script>
 </body>
