@@ -10,16 +10,17 @@
         :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; --gray: #666; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; outline: none; }
         body { 
-            font-family: -apple-system, system-ui, sans-serif; 
+            font-family: -apple-system, sans-serif; 
             background: var(--bg); color: #fff; margin: 0; 
             padding: env(safe-area-inset-top) 20px 120px 20px;
+            user-select: none;
         }
         .nav { 
             position: fixed; bottom: 0; left: 0; right: 0; 
             height: calc(70px + env(safe-area-inset-bottom)); 
             background: #111; display: flex; z-index: 1000; border-top: 1px solid #333;
         }
-        .nav-btn { flex: 1; border: none; background: none; color: var(--gray); font-size: 11px; font-weight: bold; text-transform: uppercase; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-btn { flex: 1; border: none; background: none; color: var(--gray); font-size: 11px; font-weight: bold; text-transform: uppercase; padding-bottom: env(safe-area-inset-bottom); pointer-events: auto; }
         .nav-btn.active { color: var(--cyan); }
         .screen { display: none; }
         .screen.active { display: block; }
@@ -28,11 +29,11 @@
         circle { fill: none; stroke-width: 12; stroke-linecap: round; }
         .bg-ring { stroke: #1a1a1a; }
         .fill-ring { transition: stroke-dashoffset 0.6s ease; }
-        .gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
+        .gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; pointer-events: none; }
         .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #1e1e24; color: #fff; border: 1px solid #444; font-size: 16px; }
-        .btn-ios { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 16px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; }
-        .btn-ios:active { opacity: 0.6; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #1e1e24; color: #fff; border: 1px solid #444; font-size: 16px; -webkit-appearance: none; }
+        .btn-ios { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 16px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; pointer-events: auto; }
+        .btn-ios:active { opacity: 0.5; background: #fff !important; color: #000 !important; }
         .purple { background: var(--purple); } .green { background: var(--green); color: #000; } .red { background: var(--red); color: #000; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; position: relative; }
@@ -62,13 +63,13 @@
         <div class="card">
             <div id="lock-msg" style="color:var(--red); font-size:10px; text-align:center"></div>
             <input type="number" id="limit-val" placeholder="Montant du budget">
-            <button class="btn-ios purple" onclick="setBudget()">Valider le budget</button>
+            <button class="btn-ios purple" id="btn-save-budget">Valider le budget</button>
         </div>
         <div class="card">
             <input type="text" id="op-n" placeholder="Nom">
             <input type="number" id="op-a" placeholder="Montant">
-            <button class="btn-ios green" onclick="addTx(1)">+ Entrée</button>
-            <button class="btn-ios red" onclick="addTx(-1)">- Dépense</button>
+            <button class="btn-ios green" id="btn-add-gain">+ Entrée</button>
+            <button class="btn-ios red" id="btn-add-loss">- Dépense</button>
         </div>
     </div>
 
@@ -76,20 +77,20 @@
         <h2 style="text-align:center">Calendrier</h2>
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <button onclick="changeMonth(-1)" style="background:none; border:none; color:var(--cyan); font-size:20px">◀</button>
+                <button id="btn-prev-month" style="background:none; border:none; color:var(--cyan); font-size:24px; padding:10px">◀</button>
                 <b id="cal-title"></b>
-                <button onclick="changeMonth(1)" style="background:none; border:none; color:var(--cyan); font-size:20px">▶</button>
+                <button id="btn-next-month" style="background:none; border:none; color:var(--cyan); font-size:24px; padding:10px">▶</button>
             </div>
             <div class="cal-grid" id="cal-grid"></div>
         </div>
         <div id="cal-details" class="card"></div>
-        <button class="btn-ios" style="background:#333" onclick="exportCSV()">Export CSV</button>
+        <button class="btn-ios" style="background:#333" id="btn-export">Export CSV</button>
     </div>
 
     <nav class="nav">
-        <button class="nav-btn active" onclick="showScr('scr-global', this)">Global</button>
-        <button class="nav-btn" onclick="showScr('scr-budget', this)">Budget</button>
-        <button class="nav-btn" onclick="showScr('scr-cal', this)">Calendrier</button>
+        <button class="nav-btn active" id="nav-global">Global</button>
+        <button class="nav-btn" id="nav-budget">Budget</button>
+        <button class="nav-btn" id="nav-cal">Calendrier</button>
     </nav>
 
     <script>
@@ -98,23 +99,33 @@
         let selDate = new Date().toLocaleDateString('fr-FR');
         const circ = 2 * Math.PI * 85;
 
+        // SYSTEME DE CLIC ROBUSTE POUR iOS PWA
+        function touchAction(id, fn) {
+            const el = document.getElementById(id);
+            if(!el) return;
+            const handler = (e) => {
+                e.preventDefault();
+                fn();
+                refresh();
+            };
+            el.addEventListener('touchend', handler, { passive: false });
+            el.addEventListener('click', (e) => { if(e.pointerType !== 'touch') handler(e); });
+        }
+
         function refresh() {
             const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
             const ins = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
             const bal = db.base + ins - out;
             const rem = db.limit - out + ins;
 
-            // Update UI
             document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
             updateRing('ring-global', bal, 2500);
-            
             document.getElementById('txt-budget').innerText = rem.toFixed(2) + '€';
             updateRing('ring-budget', rem, db.limit);
 
             const last5 = db.tx.slice(-5).reverse().map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
             document.getElementById('list-global').innerHTML = "<b>Activités :</b>" + (last5 || "<br>Aucune");
 
-            // Lock logic
             if (db.lDate) {
                 const ld = new Date(db.lDate);
                 const now = new Date();
@@ -123,7 +134,6 @@
                     document.getElementById('lock-msg').innerText = "🔒 Budget fixé pour ce mois.";
                 }
             }
-
             renderCal();
             localStorage.setItem('zenbudget_db', JSON.stringify(db));
         }
@@ -135,46 +145,21 @@
             el.style.strokeDashoffset = circ - (p/100)*circ;
         }
 
-        function setBudget() {
-            const v = parseFloat(document.getElementById('limit-val').value);
-            if (v > 0) { db.limit = v; db.lDate = new Date().toISOString(); refresh(); alert("Budget enregistré"); }
-        }
-
-        function addTx(m) {
-            const n = document.getElementById('op-n').value || (m > 0 ? "Gain" : "Dépense");
-            const a = parseFloat(document.getElementById('op-a').value);
-            if (a > 0) {
-                db.tx.push({ n, a: a * m, d: new Date().toLocaleDateString('fr-FR') });
-                document.getElementById('op-n').value = "";
-                document.getElementById('op-a').value = "";
-                refresh();
-            }
-        }
-
-        function showScr(id, btn) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            btn.classList.add('active');
-        }
-
         function renderCal() {
             const grid = document.getElementById('cal-grid');
             grid.innerHTML = "";
             const m = curDate.getMonth(), y = curDate.getFullYear();
             document.getElementById('cal-title').innerText = new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(curDate);
-            
             const start = new Date(y, m, 1).getDay();
             const days = new Date(y, m + 1, 0).getDate();
             for(let i=0; i<(start===0?6:start-1); i++) grid.appendChild(document.createElement('div'));
-
             for(let d=1; d<=days; d++) {
                 const dateStr = `${d.toString().padStart(2,'0')}/${(m+1).toString().padStart(2,'0')}/${y}`;
                 const el = document.createElement('div');
                 el.className = 'cal-day' + (dateStr === new Date().toLocaleDateString('fr-FR') ? ' today' : '') + (dateStr === selDate ? ' selected' : '');
                 if (db.tx.some(t => t.d === dateStr)) el.classList.add('has-tx');
                 el.innerText = d;
-                el.onclick = () => { selDate = dateStr; renderCal(); showDetails(dateStr); };
+                el.addEventListener('touchend', (e) => { e.preventDefault(); selDate = dateStr; renderCal(); showDetails(dateStr); });
                 grid.appendChild(el);
             }
         }
@@ -184,18 +169,47 @@
             document.getElementById('cal-details').innerHTML = `<b>${ds}</b><br>` + (txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Rien");
         }
 
-        function changeMonth(v) { curDate.setMonth(curDate.getMonth() + v); renderCal(); }
-
-        function exportCSV() {
-            let csv = "Date,Nom,Montant\n" + db.tx.map(t => `${t.d},${t.n},${t.a}`).join('\n');
-            const blob = new Blob([csv], {type:'text/csv'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'budget.csv';
-            a.click();
+        function showScr(id, btnId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById(btnId).classList.add('active');
         }
 
-        window.onload = refresh;
+        window.onload = () => {
+            // Navigation
+            touchAction('nav-global', () => showScr('scr-global', 'nav-global'));
+            touchAction('nav-budget', () => showScr('scr-budget', 'nav-budget'));
+            touchAction('nav-cal', () => showScr('scr-cal', 'nav-cal'));
+
+            // Actions Budget
+            touchAction('btn-save-budget', () => {
+                const v = parseFloat(document.getElementById('limit-val').value);
+                if (v > 0) { db.limit = v; db.lDate = new Date().toISOString(); alert("Budget OK"); }
+            });
+
+            touchAction('btn-add-gain', () => {
+                const n = document.getElementById('op-n').value || "Gain";
+                const a = parseFloat(document.getElementById('op-a').value);
+                if (a > 0) { db.tx.push({ n, a: a, d: new Date().toLocaleDateString('fr-FR') }); document.getElementById('op-n').value = ""; document.getElementById('op-a').value = ""; }
+            });
+
+            touchAction('btn-add-loss', () => {
+                const n = document.getElementById('op-n').value || "Dépense";
+                const a = parseFloat(document.getElementById('op-a').value);
+                if (a > 0) { db.tx.push({ n, a: -a, d: new Date().toLocaleDateString('fr-FR') }); document.getElementById('op-n').value = ""; document.getElementById('op-a').value = ""; }
+            });
+
+            // Cal Actions
+            touchAction('btn-prev-month', () => { curDate.setMonth(curDate.getMonth() - 1); });
+            touchAction('btn-next-month', () => { curDate.setMonth(curDate.getMonth() + 1); });
+            touchAction('btn-export', () => {
+                let csv = "Date,Nom,Montant\n" + db.tx.map(t => `${t.d},${t.n},${t.a}`).join('\n');
+                window.open("data:text/csv;charset=utf-8," + encodeURI(csv));
+            });
+
+            refresh();
+        };
     </script>
 </body>
 </html>
