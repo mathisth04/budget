@@ -2,64 +2,74 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ZenBudget</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <style>
         :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; }
         
-        /* Suppression de TOUTES les protections qui bloquent le clavier */
+        * { -webkit-tap-highlight-color: transparent; }
+
         body { 
             font-family: -apple-system, sans-serif; 
             background: var(--bg); color: #fff; margin: 0; 
             padding: env(safe-area-inset-top) 20px 120px 20px;
+            /* On autorise explicitement la sélection pour activer le clavier */
+            -webkit-user-select: text !important;
+            user-select: text !important;
         }
 
         .nav { 
             position: fixed; bottom: 0; left: 0; right: 0; 
             height: calc(70px + env(safe-area-inset-bottom)); 
-            background: #111; display: flex; z-index: 1000; border-top: 1px solid #333;
+            background: #111; display: flex; z-index: 1000;
+            border-top: 1px solid #333;
         }
         .nav-btn { flex: 1; border: none; background: none; color: #666; font-size: 11px; font-weight: bold; text-transform: uppercase; }
         .nav-btn.active { color: var(--cyan); }
-        
+
         .screen { display: none; }
         .screen.active { display: block; }
 
-        .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
-
-        /* Style spécifique pour forcer l'ouverture du clavier sur iOS */
+        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #222; }
+        
+        /* Correction majeure pour iPhone 14 */
         input { 
-            width: 100%; padding: 15px; margin: 8px 0; border-radius: 12px; 
-            background: #fff; color: #000; border: none; /* Fond blanc pour être sûr que l'iPhone le voit comme un champ */
+            width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; 
+            background: #1e1e24; color: #fff; border: 1px solid #444; 
             font-size: 16px; display: block;
-            -webkit-user-select: text !important;
-            user-select: text !important;
+            /* Force l'apparition du curseur */
+            cursor: text !important;
+            -webkit-appearance: none;
+            opacity: 1;
         }
 
         .btn-ios { 
             width: 100%; padding: 18px; border-radius: 14px; border: none; 
-            font-size: 15px; font-weight: 800; margin: 5px 0; color: #fff; 
+            font-size: 16px; font-weight: 800; margin: 10px 0; 
+            display: block; color: #fff; text-transform: uppercase;
         }
-        .purple { background: var(--purple); } .green { background: var(--green); color: #000; } .red { background: var(--red); color: #000; }
+        .purple { background: var(--purple); }
+        .green { background: var(--green); color: #000; }
+        .red { background: var(--red); color: #000; }
+
+        .gauge { position: relative; width: 180px; height: 180px; margin: 20px auto; text-align: center; }
+        .tx-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #222; }
         
-        .gauge { position: relative; width: 140px; height: 140px; margin: 10px auto; }
-        svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        circle { fill: none; stroke-width: 12; stroke-linecap: round; }
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-        .selected { background: var(--purple); color: white; }
-        .tx-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-top: 10px; }
+        .cal-day { padding: 10px 0; border-radius: 50%; font-size: 14px; }
+        .selected { background: var(--purple); color: #fff; }
     </style>
 </head>
 <body>
 
     <div id="scr-global" class="screen active">
-        <h2 style="text-align:center">Solde</h2>
-        <div class="gauge">
-            <svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="85" stroke="#1a1a1a" stroke-width="12"></circle><circle id="ring-global" cx="100" cy="100" r="85" stroke="var(--cyan)" stroke-width="12"></circle></svg>
-            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%)"><b id="txt-global">0€</b></div>
+        <h2 style="text-align:center">Solde Global</h2>
+        <div class="card" style="text-align:center">
+            <h1 id="txt-global" style="font-size:40px; margin:10px 0;">0€</h1>
         </div>
         <div id="list-global" class="card"></div>
     </div>
@@ -67,25 +77,25 @@
     <div id="scr-budget" class="screen">
         <h2 style="text-align:center">Budget</h2>
         <div class="card">
-            <p id="lock-msg" style="color:var(--red); font-size:11px;"></p>
-            <input type="number" id="limit-val" placeholder="Limite du mois" step="0.01">
-            <button class="btn-ios purple" onclick="saveBudget()">Valider Budget</button>
+            <p id="lock-msg" style="color:var(--red); font-size:12px; text-align:center;"></p>
+            <input type="number" id="limit-input" placeholder="Limite mensuelle" inputmode="decimal">
+            <button class="btn-ios purple" onclick="fixBudget()">Fixer le budget</button>
         </div>
         <div class="card">
-            <input type="text" id="op-n" placeholder="Nom">
-            <input type="number" id="op-a" placeholder="Montant" step="0.01">
-            <button class="btn-ios green" onclick="addTx(1)">+ Gain</button>
-            <button class="btn-ios red" onclick="addTx(-1)">- Dépense</button>
+            <input type="text" id="op-name" placeholder="Nom (ex: Courses)">
+            <input type="number" id="op-amount" placeholder="Montant (€)" inputmode="decimal">
+            <button class="btn-ios green" onclick="addMoney(1)">+ Entrée</button>
+            <button class="btn-ios red" onclick="addMoney(-1)">- Dépense</button>
         </div>
     </div>
 
     <div id="scr-cal" class="screen">
         <h2 style="text-align:center">Calendrier</h2>
         <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
-                <button onclick="mMonth(-1)" style="color:var(--cyan); background:none; border:none;">◀</button>
-                <b id="cal-title"></b>
-                <button onclick="mMonth(1)" style="color:var(--cyan); background:none; border:none;">▶</button>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button onclick="changeM(-1)" style="color:var(--cyan); background:none; border:none; font-size:20px;">◀</button>
+                <b id="cal-month"></b>
+                <button onclick="changeM(1)" style="color:var(--cyan); background:none; border:none; font-size:20px;">▶</button>
             </div>
             <div class="cal-grid" id="cal-grid"></div>
         </div>
@@ -93,15 +103,15 @@
     </div>
 
     <nav class="nav">
-        <button class="nav-btn active" onclick="sw('scr-global', this)">Global</button>
-        <button class="nav-btn" onclick="sw('scr-budget', this)">Budget</button>
-        <button class="nav-btn" onclick="sw('scr-cal', this)">Calendrier</button>
+        <button class="nav-btn active" id="n1" onclick="tab('scr-global', 'n1')">Global</button>
+        <button class="nav-btn" id="n2" onclick="tab('scr-budget', 'n2')">Budget</button>
+        <button class="nav-btn" id="n3" onclick="tab('scr-cal', 'n3')">Calendrier</button>
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('zen_db')) || { base: 1047.92, limit: 0, lD: null, tx: [] };
-        let cDate = new Date();
-        let sDate = new Date().toLocaleDateString('fr-FR');
+        let db = JSON.parse(localStorage.getItem('zen_db')) || { base: 1047.92, limit: 0, lDate: null, tx: [] };
+        let currDate = new Date();
+        let selDate = new Date().toLocaleDateString('fr-FR');
 
         function refresh() {
             const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
@@ -110,64 +120,64 @@
 
             document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
             
-            const list = db.tx.slice(-5).reverse().map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
-            document.getElementById('list-global').innerHTML = list || "Vide";
+            const html = db.tx.slice(-5).reverse().map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
+            document.getElementById('list-global').innerHTML = "<b>Dernières opérations :</b><br>" + (html || "Aucune");
 
-            if (db.lD) {
-                const ld = new Date(db.lD);
-                if (ld.getMonth() === new Date().getMonth()) {
-                    document.getElementById('limit-val').disabled = true;
-                    document.getElementById('lock-msg').innerText = "🔒 Verrouillé";
+            if (db.lDate) {
+                const d = new Date(db.lDate);
+                if (d.getMonth() === new Date().getMonth()) {
+                    document.getElementById('limit-input').disabled = true;
+                    document.getElementById('lock-msg').innerText = "🔒 Budget verrouillé pour ce mois.";
                 }
             }
-            renderCal();
+            drawCal();
             localStorage.setItem('zen_db', JSON.stringify(db));
         }
 
-        function saveBudget() {
-            const v = document.getElementById('limit-val').value;
-            if(v) { db.limit = parseFloat(v); db.lD = new Date().toISOString(); refresh(); }
+        function fixBudget() {
+            const v = document.getElementById('limit-input').value;
+            if(v) { db.limit = parseFloat(v); db.lDate = new Date().toISOString(); refresh(); alert("Budget enregistré !"); }
         }
 
-        function addTx(dir) {
-            const n = document.getElementById('op-n').value;
-            const a = document.getElementById('op-a').value;
+        function addMoney(dir) {
+            const n = document.getElementById('op-name').value || "Opération";
+            const a = document.getElementById('op-amount').value;
             if(a) {
-                db.tx.push({ n: n||"T", a: parseFloat(a)*dir, d: new Date().toLocaleDateString('fr-FR') });
-                document.getElementById('op-n').value = "";
-                document.getElementById('op-a').value = "";
+                db.tx.push({ n, a: parseFloat(a) * dir, d: new Date().toLocaleDateString('fr-FR') });
+                document.getElementById('op-name').value = "";
+                document.getElementById('op-amount').value = "";
                 refresh();
             }
         }
 
-        function sw(id, btn) {
+        function tab(id, btn) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            btn.classList.add('active');
+            document.getElementById(btn).classList.add('active');
         }
 
-        function renderCal() {
+        function drawCal() {
             const grid = document.getElementById('cal-grid'); grid.innerHTML = "";
-            const m = cDate.getMonth(), y = cDate.getFullYear();
-            document.getElementById('cal-title').innerText = (m+1)+"/"+y;
-            const days = new Date(y, m+1, 0).getDate();
+            const m = currDate.getMonth(), y = currDate.getFullYear();
+            document.getElementById('cal-month').innerText = new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(currDate);
+            const days = new Date(y, m + 1, 0).getDate();
             for(let d=1; d<=days; d++) {
                 const ds = `${d.toString().padStart(2,'0')}/${(m+1).toString().padStart(2,'0')}/${y}`;
                 const el = document.createElement('div'); el.className = 'cal-day';
-                if(ds === sDate) el.classList.add('selected');
+                if(ds === selDate) el.classList.add('selected');
                 el.innerText = d;
-                el.onclick = () => { sDate = ds; renderCal(); showDay(ds); };
+                el.onclick = () => { selDate = ds; drawCal(); showDay(ds); };
                 grid.appendChild(el);
             }
         }
 
         function showDay(ds) {
             const txs = db.tx.filter(t => t.d === ds);
-            document.getElementById('cal-details').innerHTML = txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Rien";
+            document.getElementById('cal-details').innerHTML = `<b>${ds}</b><br>` + (txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Aucune dépense");
         }
 
-        function mMonth(v) { cDate.setMonth(cDate.getMonth()+v); renderCal(); }
+        function changeM(v) { currDate.setMonth(currDate.getMonth() + v); drawCal(); }
 
         window.onload = refresh;
     </script>
