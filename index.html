@@ -2,67 +2,64 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ZenBudget</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
-        :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; --gray: #666; }
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; }
+        
+        /* Suppression de TOUTES les protections qui bloquent le clavier */
         body { 
             font-family: -apple-system, sans-serif; 
             background: var(--bg); color: #fff; margin: 0; 
             padding: env(safe-area-inset-top) 20px 120px 20px;
         }
-        /* Navigation fixe */
+
         .nav { 
             position: fixed; bottom: 0; left: 0; right: 0; 
             height: calc(70px + env(safe-area-inset-bottom)); 
             background: #111; display: flex; z-index: 1000; border-top: 1px solid #333;
         }
-        .nav-btn { flex: 1; border: none; background: none; color: var(--gray); font-size: 11px; font-weight: bold; text-transform: uppercase; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-btn { flex: 1; border: none; background: none; color: #666; font-size: 11px; font-weight: bold; text-transform: uppercase; }
         .nav-btn.active { color: var(--cyan); }
         
         .screen { display: none; }
         .screen.active { display: block; }
 
-        /* Jauge */
-        .gauge { position: relative; width: 160px; height: 160px; margin: 10px auto; }
-        svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        circle { fill: none; stroke-width: 12; stroke-linecap: round; }
-        .bg-ring { stroke: #1a1a1a; }
-        .gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
-
-        /* Formulaires et Inputs - Crucial pour iPhone */
         .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
+
+        /* Style spécifique pour forcer l'ouverture du clavier sur iOS */
         input { 
             width: 100%; padding: 15px; margin: 8px 0; border-radius: 12px; 
-            background: #1e1e24; color: #fff; border: 1px solid #444; 
+            background: #fff; color: #000; border: none; /* Fond blanc pour être sûr que l'iPhone le voit comme un champ */
             font-size: 16px; display: block;
+            -webkit-user-select: text !important;
+            user-select: text !important;
         }
+
         .btn-ios { 
             width: 100%; padding: 18px; border-radius: 14px; border: none; 
             font-size: 15px; font-weight: 800; margin: 5px 0; color: #fff; 
-            text-transform: uppercase; cursor: pointer;
         }
         .purple { background: var(--purple); } .green { background: var(--green); color: #000; } .red { background: var(--red); color: #000; }
         
-        /* Calendrier */
+        .gauge { position: relative; width: 140px; height: 140px; margin: 10px auto; }
+        svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        circle { fill: none; stroke-width: 12; stroke-linecap: round; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 13px; }
-        .today { border: 2px solid var(--cyan); }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
         .selected { background: var(--purple); color: white; }
-        .has-tx::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: var(--green); border-radius: 50%; }
-        .tx-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; font-size: 14px; }
+        .tx-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; }
     </style>
 </head>
 <body>
 
     <div id="scr-global" class="screen active">
-        <h2 style="text-align:center">Solde Global</h2>
+        <h2 style="text-align:center">Solde</h2>
         <div class="gauge">
-            <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-global" cx="100" cy="100" r="85" stroke="var(--cyan)"></circle></svg>
-            <div class="gauge-data"><b id="txt-global" style="font-size:20px">0€</b></div>
+            <svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="85" stroke="#1a1a1a" stroke-width="12"></circle><circle id="ring-global" cx="100" cy="100" r="85" stroke="var(--cyan)" stroke-width="12"></circle></svg>
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%)"><b id="txt-global">0€</b></div>
         </div>
         <div id="list-global" class="card"></div>
     </div>
@@ -70,15 +67,15 @@
     <div id="scr-budget" class="screen">
         <h2 style="text-align:center">Budget</h2>
         <div class="card">
-            <p id="lock-msg" style="color:var(--red); font-size:11px; text-align:center"></p>
-            <input type="number" id="limit-val" placeholder="Limite du mois" inputmode="decimal">
-            <button class="btn-ios purple" onclick="saveBudget()">Valider le Budget</button>
+            <p id="lock-msg" style="color:var(--red); font-size:11px;"></p>
+            <input type="number" id="limit-val" placeholder="Limite du mois" step="0.01">
+            <button class="btn-ios purple" onclick="saveBudget()">Valider Budget</button>
         </div>
         <div class="card">
-            <input type="text" id="op-n" placeholder="Nom de la dépense">
-            <input type="number" id="op-a" placeholder="Montant (€)" inputmode="decimal">
-            <button class="btn-ios green" onclick="doTx(1)">+ Ajouter Gain</button>
-            <button class="btn-ios red" onclick="doTx(-1)">- Ajouter Dépense</button>
+            <input type="text" id="op-n" placeholder="Nom">
+            <input type="number" id="op-a" placeholder="Montant" step="0.01">
+            <button class="btn-ios green" onclick="addTx(1)">+ Gain</button>
+            <button class="btn-ios red" onclick="addTx(-1)">- Dépense</button>
         </div>
     </div>
 
@@ -86,27 +83,25 @@
         <h2 style="text-align:center">Calendrier</h2>
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px">
-                <button onclick="moveMonth(-1)" style="color:var(--cyan); background:none; border:none; font-size:20px">◀</button>
+                <button onclick="mMonth(-1)" style="color:var(--cyan); background:none; border:none;">◀</button>
                 <b id="cal-title"></b>
-                <button onclick="moveMonth(1)" style="color:var(--cyan); background:none; border:none; font-size:20px">▶</button>
+                <button onclick="mMonth(1)" style="color:var(--cyan); background:none; border:none;">▶</button>
             </div>
             <div class="cal-grid" id="cal-grid"></div>
         </div>
         <div id="cal-details" class="card"></div>
-        <button class="btn-ios" style="background:#333" onclick="downloadCSV()">Exporter CSV</button>
     </div>
 
     <nav class="nav">
-        <button class="nav-btn active" onclick="nav('scr-global', this)">Global</button>
-        <button class="nav-btn" onclick="nav('scr-budget', this)">Budget</button>
-        <button class="nav-btn" onclick="nav('scr-cal', this)">Calendrier</button>
+        <button class="nav-btn active" onclick="sw('scr-global', this)">Global</button>
+        <button class="nav-btn" onclick="sw('scr-budget', this)">Budget</button>
+        <button class="nav-btn" onclick="sw('scr-cal', this)">Calendrier</button>
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('zenbudget_db')) || { base: 1047.92, limit: 0, lDate: null, tx: [] };
-        let viewDate = new Date();
-        let selDate = new Date().toLocaleDateString('fr-FR');
-        const circ = 2 * Math.PI * 85;
+        let db = JSON.parse(localStorage.getItem('zen_db')) || { base: 1047.92, limit: 0, lD: null, tx: [] };
+        let cDate = new Date();
+        let sDate = new Date().toLocaleDateString('fr-FR');
 
         function refresh() {
             const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
@@ -114,81 +109,65 @@
             const bal = db.base + ins - out;
 
             document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
-            const p1 = Math.min(100, (bal/2500)*100);
-            document.getElementById('ring-global').style.strokeDasharray = `${circ} ${circ}`;
-            document.getElementById('ring-global').style.strokeDashoffset = circ - (p1/100)*circ;
-
+            
             const list = db.tx.slice(-5).reverse().map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
-            document.getElementById('list-global').innerHTML = list || "Aucune donnée";
+            document.getElementById('list-global').innerHTML = list || "Vide";
 
-            // Verrou budget
-            if (db.lDate) {
-                const ld = new Date(db.lDate);
-                const now = new Date();
-                if (ld.getMonth() === now.getMonth() && ld.getFullYear() === now.getFullYear()) {
+            if (db.lD) {
+                const ld = new Date(db.lD);
+                if (ld.getMonth() === new Date().getMonth()) {
                     document.getElementById('limit-val').disabled = true;
-                    document.getElementById('lock-msg').innerText = "🔒 Verrouillé ce mois-ci";
+                    document.getElementById('lock-msg').innerText = "🔒 Verrouillé";
                 }
             }
-
-            renderCalendar();
-            localStorage.setItem('zenbudget_db', JSON.stringify(db));
+            renderCal();
+            localStorage.setItem('zen_db', JSON.stringify(db));
         }
 
         function saveBudget() {
-            const v = parseFloat(document.getElementById('limit-val').value);
-            if(v > 0) { db.limit = v; db.lDate = new Date().toISOString(); refresh(); alert("Budget fixé !"); }
+            const v = document.getElementById('limit-val').value;
+            if(v) { db.limit = parseFloat(v); db.lD = new Date().toISOString(); refresh(); }
         }
 
-        function doTx(type) {
-            const n = document.getElementById('op-n').value || "Transaction";
-            const a = parseFloat(document.getElementById('op-a').value);
-            if(a > 0) {
-                db.tx.push({ n, a: a * type, d: new Date().toLocaleDateString('fr-FR') });
+        function addTx(dir) {
+            const n = document.getElementById('op-n').value;
+            const a = document.getElementById('op-a').value;
+            if(a) {
+                db.tx.push({ n: n||"T", a: parseFloat(a)*dir, d: new Date().toLocaleDateString('fr-FR') });
                 document.getElementById('op-n').value = "";
                 document.getElementById('op-a').value = "";
                 refresh();
             }
         }
 
-        function nav(id, btn) {
+        function sw(id, btn) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             btn.classList.add('active');
         }
 
-        function renderCalendar() {
-            const grid = document.getElementById('cal-grid');
-            grid.innerHTML = "";
-            const m = viewDate.getMonth(), y = viewDate.getFullYear();
-            document.getElementById('cal-title').innerText = new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(viewDate);
-            const start = new Date(y, m, 1).getDay();
-            const days = new Date(y, m + 1, 0).getDate();
-            const empty = start === 0 ? 6 : start - 1;
-            for(let i=0; i<empty; i++) grid.appendChild(document.createElement('div'));
+        function renderCal() {
+            const grid = document.getElementById('cal-grid'); grid.innerHTML = "";
+            const m = cDate.getMonth(), y = cDate.getFullYear();
+            document.getElementById('cal-title').innerText = (m+1)+"/"+y;
+            const days = new Date(y, m+1, 0).getDate();
             for(let d=1; d<=days; d++) {
                 const ds = `${d.toString().padStart(2,'0')}/${(m+1).toString().padStart(2,'0')}/${y}`;
-                const el = document.createElement('div');
-                el.className = 'cal-day' + (ds === selDate ? ' selected' : '');
-                if (db.tx.some(t => t.d === ds)) el.innerHTML = `${d}<div style="width:4px;height:4px;background:var(--green);border-radius:50%;position:absolute;bottom:2px"></div>`;
-                else el.innerText = d;
-                el.onclick = () => { selDate = ds; renderCalendar(); showDay(ds); };
+                const el = document.createElement('div'); el.className = 'cal-day';
+                if(ds === sDate) el.classList.add('selected');
+                el.innerText = d;
+                el.onclick = () => { sDate = ds; renderCal(); showDay(ds); };
                 grid.appendChild(el);
             }
         }
 
         function showDay(ds) {
             const txs = db.tx.filter(t => t.d === ds);
-            document.getElementById('cal-details').innerHTML = `<b>${ds}</b><br>` + (txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Rien");
+            document.getElementById('cal-details').innerHTML = txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Rien";
         }
 
-        function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCalendar(); }
-
-        function downloadCSV() {
-            let csv = "Date,Nom,Montant\n" + db.tx.map(t => `${t.d},${t.n},${t.a}`).join('\n');
-            window.open("data:text/csv;charset=utf-8," + encodeURI(csv));
-        }
+        function mMonth(v) { cDate.setMonth(cDate.getMonth()+v); renderCal(); }
 
         window.onload = refresh;
     </script>
