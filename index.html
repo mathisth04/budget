@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZenBudget</title>
+    <title>ZenBudget Pro</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/512/00f2ff/b-filled.png">
 
     <style>
-        :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; }
-        
-        * { -webkit-tap-highlight-color: transparent; outline: none; }
+        :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; --gray: #666; }
+        * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
 
         body { 
             font-family: -apple-system, sans-serif; 
@@ -20,52 +19,50 @@
             padding: env(safe-area-inset-top) 20px 120px 20px;
         }
 
-        /* Nav - Version fixe et simple pour éviter les bugs de zone */
         .nav { 
             position: fixed; bottom: 0; left: 0; right: 0; 
             height: calc(70px + env(safe-area-inset-bottom)); 
-            background: #111; display: flex; z-index: 1000;
-            border-top: 1px solid #333;
+            background: rgba(17, 17, 17, 0.95); display: flex; z-index: 1000;
+            border-top: 1px solid #333; backdrop-filter: blur(10px);
         }
         .nav-btn { 
-            flex: 1; border: none; background: none; color: #666; 
+            flex: 1; border: none; background: none; color: var(--gray); 
             font-size: 11px; font-weight: bold; text-transform: uppercase;
+            padding-bottom: env(safe-area-inset-bottom);
         }
         .nav-btn.active { color: var(--cyan); }
 
-        .screen { display: none; }
+        .screen { display: none; animation: fadeIn 0.3s ease; }
         .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Jauges */
         .gauge { position: relative; width: 220px; height: 220px; margin: 20px auto; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; }
         .bg-ring { fill: none; stroke: #1a1a1a; stroke-width: 12; }
-        .fill-ring { fill: none; stroke-width: 12; stroke-linecap: round; transition: 0.6s ease-out; }
+        .fill-ring { fill: none; stroke-width: 12; stroke-linecap: round; transition: 1s cubic-bezier(0.4, 0, 0.2, 1); }
         .gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
 
-        /* Formulaires */
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #222; }
-        
         input { 
             width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; 
-            background: #1e1e24; color: #fff; border: 1px solid #444; 
-            font-size: 16px; box-sizing: border-box; display: block;
+            background: #1e1e24; color: #fff; border: 1px solid #444; font-size: 16px;
         }
 
-        /* Boutons massifs pour faciliter le toucher */
         .btn-ios { 
             width: 100%; padding: 18px; border-radius: 14px; border: none; 
-            font-size: 16px; font-weight: 800; margin: 10px 0; 
-            display: block; cursor: pointer; color: #fff;
-            text-transform: uppercase;
+            font-size: 16px; font-weight: 800; margin: 10px 0; color: #fff;
+            text-transform: uppercase; transition: transform 0.1s;
         }
-        .btn-ios:active { background: #fff !important; color: #000 !important; }
+        .btn-ios:active { transform: scale(0.98); opacity: 0.8; }
 
         .purple { background: var(--purple); }
         .green { background: var(--green); color: #000; }
         .red { background: var(--red); color: #000; }
+        .btn-del { color: var(--red); border: none; background: none; font-size: 18px; padding: 0 10px; }
 
-        .tx-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #222; }
+        .tx-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #222; }
+        .tx-info { display: flex; flex-direction: column; }
+        .tx-date { font-size: 10px; color: var(--gray); }
     </style>
 </head>
 <body>
@@ -77,17 +74,21 @@
                 <circle class="bg-ring" cx="100" cy="100" r="85"></circle>
                 <circle id="ring-global" class="fill-ring" cx="100" cy="100" r="85" stroke="var(--cyan)"></circle>
             </svg>
-            <div class="gauge-data"><small>TOTAL</small><br><b id="txt-global" style="font-size:26px">0€</b></div>
+            <div class="gauge-data">
+                <small id="label-budget">RESTANT</small><br>
+                <b id="txt-global" style="font-size:26px">0€</b>
+            </div>
         </div>
+        <h3 style="margin-left:10px">Historique</h3>
         <div id="list-global" class="card"></div>
     </div>
 
     <div id="scr-budget" class="screen">
-        <h2 style="text-align:center">Mon Budget</h2>
+        <h2 style="text-align:center">Configuration</h2>
         <div class="card">
-            <input type="number" id="limit-input" placeholder="Limite mensuelle" pattern="[0-9]*">
-            <button class="btn-ios purple" id="save-limit">Fixer le budget</button>
-            <div id="budget-status" style="text-align:center; color:var(--dim); font-size:12px"></div>
+            <label>Limite Mensuelle (Objectif)</label>
+            <input type="number" id="limit-input" placeholder="Ex: 1500" pattern="[0-9]*">
+            <button class="btn-ios purple" id="save-limit">Fixer l'objectif</button>
         </div>
         <div class="card">
             <input type="text" id="op-name" placeholder="Nom (ex: Courses)">
@@ -98,78 +99,137 @@
     </div>
 
     <div id="scr-cal" class="screen">
-        <h2 style="text-align:center">Calendrier</h2>
-        <div class="card" style="text-align:center; padding:40px 10px;">
-            Accès aux 10 prochaines années disponible via le défilement.
-        </div>
+        <h2 style="text-align:center">Analyse</h2>
+        <div class="card" id="stats-content">
+            </div>
     </div>
 
     <nav class="nav">
         <button class="nav-btn active" id="nav-1">Global</button>
-        <button class="nav-btn" id="nav-2">Budget</button>
-        <button class="nav-btn" id="nav-3">Calendrier</button>
+        <button class="nav-btn" id="nav-2">Action</button>
+        <button class="nav-btn" id="nav-3">Stats</button>
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('zenbudget_db')) || { base: 1047.92, limit: 0, tx: [] };
+        // Initialisation avec base par défaut si vide
+        let db = JSON.parse(localStorage.getItem('zenbudget_db')) || { base: 1047.92, limit: 2000, tx: [] };
         const circ = 2 * Math.PI * 85;
 
-        // Fonction pour rafraîchir les visuels
         function refresh() {
             const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
             const ins = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
             const bal = db.base + ins - out;
 
+            // 1. Mise à jour du texte
             document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
-            const pct = Math.min(100, (bal/2500)*100);
-            document.getElementById('ring-global').style.strokeDasharray = circ;
-            document.getElementById('ring-global').style.strokeDashoffset = circ - (pct/100)*circ;
+            
+            // 2. Jauge dynamique basée sur la limite
+            const maxVal = db.limit > 0 ? db.limit : 2500;
+            const pct = Math.max(0, Math.min(100, (bal / maxVal) * 100));
+            const ring = document.getElementById('ring-global');
+            ring.style.strokeDasharray = circ;
+            ring.style.strokeDashoffset = circ - (pct / 100) * circ;
+            
+            // Couleur de la jauge selon le niveau
+            ring.style.stroke = pct < 20 ? 'var(--red)' : 'var(--cyan)';
 
-            const listHtml = db.tx.slice(-5).reverse().map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
+            // 3. Historique complet avec fonction de suppression
+            const listHtml = db.tx.slice().reverse().map((t, index) => {
+                const realIndex = db.tx.length - 1 - index;
+                return `
+                <div class="tx-row">
+                    <div class="tx-info">
+                        <span>${t.n}</span>
+                        <span class="tx-date">${t.d}</span>
+                    </div>
+                    <div style="display:flex; align-items:center">
+                        <b style="color:${t.a > 0 ? 'var(--green)' : 'var(--red)'}">${t.a > 0 ? '+' : ''}${t.a}€</b>
+                        <button class="btn-del" onclick="deleteTx(${realIndex})">×</button>
+                    </div>
+                </div>`;
+            }).join('');
+            
             document.getElementById('list-global').innerHTML = listHtml || "Aucune opération";
             
+            // Stats simples pour l'onglet 3
+            document.getElementById('stats-content').innerHTML = `
+                <p>Dépenses totales : <span style="color:var(--red)">${out.toFixed(2)}€</span></p>
+                <p>Entrées totales : <span style="color:var(--green)">${ins.toFixed(2)}€</span></p>
+                <p>Objectif configuré : ${db.limit}€</p>
+            `;
+
             localStorage.setItem('zenbudget_db', JSON.stringify(db));
         }
 
-        // Gestionnaire de clic forcé pour iPhone
+        // Suppression d'une transaction
+        function deleteTx(index) {
+            if(confirm("Supprimer cette opération ?")) {
+                db.tx.splice(index, 1);
+                refresh();
+            }
+        }
+
+        // Gestionnaire d'événements amélioré (anti-doublon iPhone)
         function setupBtn(id, action) {
             const el = document.getElementById(id);
+            if (!el) return;
+
+            let isProcessing = false;
+
             const handler = (e) => {
                 e.preventDefault();
-                document.activeElement.blur(); // Ferme le clavier
+                if (isProcessing) return;
+                
+                isProcessing = true;
+                setTimeout(() => { isProcessing = false; }, 300); // Délai de garde
+
+                document.activeElement.blur(); 
                 action();
                 refresh();
             };
-            el.addEventListener('click', handler);
-            el.addEventListener('touchstart', handler);
+
+            el.addEventListener('touchend', handler); // Touchend est plus réactif sur iOS
         }
 
         window.onload = () => {
-            // Navigation
-            setupBtn('nav-1', () => { switchScr('scr-global', 'nav-1') });
-            setupBtn('nav-2', () => { switchScr('scr-budget', 'nav-2') });
-            setupBtn('nav-3', () => { switchScr('scr-cal', 'nav-3') });
+            setupBtn('nav-1', () => switchScr('scr-global', 'nav-1'));
+            setupBtn('nav-2', () => switchScr('scr-budget', 'nav-2'));
+            setupBtn('nav-3', () => switchScr('scr-cal', 'nav-3'));
 
-            // Actions Budget
             setupBtn('save-limit', () => {
                 const v = parseFloat(document.getElementById('limit-input').value);
-                if(!isNaN(v)) { db.limit = v; alert("Budget fixé !"); }
+                if(!isNaN(v)) { 
+                    db.limit = v; 
+                    alert("Objectif mis à jour !"); 
+                    document.getElementById('limit-input').value = "";
+                }
             });
 
             setupBtn('add-gain', () => {
-                const n = document.getElementById('op-name').value;
+                const n = document.getElementById('op-name').value || "Revenu";
                 const a = parseFloat(document.getElementById('op-amount').value);
-                if(n && a) { db.tx.push({n, a, d: new Date().toDateString()}); }
+                if(a) { 
+                    db.tx.push({n, a, d: new Date().toLocaleDateString('fr-FR')}); 
+                    resetInputs();
+                }
             });
 
             setupBtn('add-loss', () => {
-                const n = document.getElementById('op-name').value;
+                const n = document.getElementById('op-name').value || "Dépense";
                 const a = parseFloat(document.getElementById('op-amount').value);
-                if(n && a) { db.tx.push({n, a: -a, d: new Date().toDateString()}); }
+                if(a) { 
+                    db.tx.push({n, a: -a, d: new Date().toLocaleDateString('fr-FR')}); 
+                    resetInputs();
+                }
             });
 
             refresh();
         };
+
+        function resetInputs() {
+            document.getElementById('op-name').value = "";
+            document.getElementById('op-amount').value = "";
+        }
 
         function switchScr(sid, bid) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
