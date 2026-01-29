@@ -4,145 +4,179 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ZenBudget</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/512/00f2ff/b-filled.png">
 
     <style>
         :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; padding: env(safe-area-inset-top) 20px 140px 20px; -webkit-tap-highlight-color: transparent; }
         
-        /* Nav */
-        .nav { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; height: 60px; background: #1a1a1e; display: flex; border-radius: 30px; z-index: 9999; border: 1px solid #333; overflow: hidden; }
-        .nav button { flex: 1; border: none; background: none; color: #888; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-        .nav button.active { color: var(--cyan); }
+        * { -webkit-tap-highlight-color: transparent; outline: none; }
 
-        /* Screens */
+        body { 
+            font-family: -apple-system, sans-serif; 
+            background: var(--bg); color: #fff; margin: 0; 
+            padding: env(safe-area-inset-top) 20px 120px 20px;
+        }
+
+        /* Nav - Version fixe et simple pour éviter les bugs de zone */
+        .nav { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            height: calc(70px + env(safe-area-inset-bottom)); 
+            background: #111; display: flex; z-index: 1000;
+            border-top: 1px solid #333;
+        }
+        .nav-btn { 
+            flex: 1; border: none; background: none; color: #666; 
+            font-size: 11px; font-weight: bold; text-transform: uppercase;
+        }
+        .nav-btn.active { color: var(--cyan); }
+
         .screen { display: none; }
         .screen.active { display: block; }
 
         /* Jauges */
-        .gauge-container { position: relative; width: 200px; height: 200px; margin: 20px auto; }
+        .gauge { position: relative; width: 220px; height: 220px; margin: 20px auto; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .ring-bg { fill: none; stroke: #1a1a1a; stroke-width: 12; }
-        .ring-fill { fill: none; stroke-width: 12; stroke-linecap: round; transition: 0.5s; }
-        .gauge-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
+        .bg-ring { fill: none; stroke: #1a1a1a; stroke-width: 12; }
+        .fill-ring { fill: none; stroke-width: 12; stroke-linecap: round; transition: 0.6s ease-out; }
+        .gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
 
-        /* Inputs & Buttons - CRUCIAL POUR IPHONE */
+        /* Formulaires */
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #222; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #1e1e24; color: #fff; border: 1px solid #444; font-size: 16px; box-sizing: border-box; }
         
-        /* Utilisation de vrais boutons pour forcer le focus iOS */
-        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; margin: 5px 0; display: block; cursor: pointer; }
-        .btn:active { opacity: 0.5; }
-        .btn-purple { background: var(--purple); color: #fff; }
-        .btn-green { background: var(--green); color: #000; }
-        .btn-red { background: var(--red); color: #000; }
+        input { 
+            width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; 
+            background: #1e1e24; color: #fff; border: 1px solid #444; 
+            font-size: 16px; box-sizing: border-box; display: block;
+        }
 
-        .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; }
+        /* Boutons massifs pour faciliter le toucher */
+        .btn-ios { 
+            width: 100%; padding: 18px; border-radius: 14px; border: none; 
+            font-size: 16px; font-weight: 800; margin: 10px 0; 
+            display: block; cursor: pointer; color: #fff;
+            text-transform: uppercase;
+        }
+        .btn-ios:active { background: #fff !important; color: #000 !important; }
+
+        .purple { background: var(--purple); }
+        .green { background: var(--green); color: #000; }
+        .red { background: var(--red); color: #000; }
+
+        .tx-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #222; }
     </style>
-
-    <script>
-        // LE SCRIPT EST PLACÉ ICI POUR ÊTRE PRIORITAIRE
-        let db = JSON.parse(localStorage.getItem('zenbudget_db')) || { base: 1047.92, limit: 0, tx: [] };
-
-        function update() {
-            localStorage.setItem('zenbudget_db', JSON.stringify(db));
-            render();
-        }
-
-        function add(type) {
-            let n = document.getElementById('name').value;
-            let a = parseFloat(document.getElementById('amount').value);
-            if(!n || isNaN(a)) return;
-            db.tx.push({ n, a: type === 'loss' ? -a : a, d: new Date().toDateString() });
-            document.getElementById('name').value = '';
-            document.getElementById('amount').value = '';
-            update();
-        }
-
-        function setLimit() {
-            let v = parseFloat(document.getElementById('limit-in').value);
-            if(isNaN(v)) return;
-            db.limit = v;
-            update();
-        }
-
-        function render() {
-            const totalOut = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
-            const totalIn = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
-            const bal = db.base + totalIn - totalOut;
-            
-            // UI Global
-            if(document.getElementById('bal-txt')) {
-                document.getElementById('bal-txt').innerText = bal.toFixed(2) + '€';
-                let circ = 2 * Math.PI * 85;
-                let pct = Math.min(100, (bal/2000)*100);
-                document.getElementById('ring-g').style.strokeDasharray = circ;
-                document.getElementById('ring-g').style.strokeDashoffset = circ - (pct/100)*circ;
-            }
-
-            // UI Budget
-            if(document.getElementById('budget-txt')) {
-                let spent = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0); // Simplifié pour test
-                let left = db.limit - spent;
-                document.getElementById('budget-txt').innerText = left.toFixed(2) + '€';
-            }
-            
-            // Listes
-            let html = db.tx.slice(-3).reverse().map(t => `<div class="item"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
-            document.getElementById('list-g').innerHTML = html;
-        }
-
-        function show(id, btn) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            btn.classList.add('active');
-        }
-
-        window.onload = render;
-    </script>
 </head>
 <body>
 
-    <div id="scr1" class="screen active">
-        <h2 style="text-align:center">Global</h2>
-        <div class="gauge-container">
-            <svg viewBox="0 0 200 200"><circle class="ring-bg" cx="100" cy="100" r="85"></circle><circle id="ring-g" class="ring-fill" cx="100" cy="100" r="85" stroke="var(--cyan)"></circle></svg>
-            <div class="gauge-text"><small>SOLDE</small><br><b id="bal-txt" style="font-size:24px">0€</b></div>
+    <div id="scr-global" class="screen active">
+        <h2 style="text-align:center">Solde Global</h2>
+        <div class="gauge">
+            <svg viewBox="0 0 200 200">
+                <circle class="bg-ring" cx="100" cy="100" r="85"></circle>
+                <circle id="ring-global" class="fill-ring" cx="100" cy="100" r="85" stroke="var(--cyan)"></circle>
+            </svg>
+            <div class="gauge-data"><small>TOTAL</small><br><b id="txt-global" style="font-size:26px">0€</b></div>
         </div>
-        <div class="card" id="list-g"></div>
+        <div id="list-global" class="card"></div>
     </div>
 
-    <div id="scr2" class="screen">
-        <h2 style="text-align:center">Budget</h2>
+    <div id="scr-budget" class="screen">
+        <h2 style="text-align:center">Mon Budget</h2>
         <div class="card">
-            <input type="number" id="limit-in" placeholder="Limite">
-            <button class="btn btn-purple" onclick="setLimit()">VALIDER LIMITE</button>
-            <div class="gauge-container" style="width:140px; height:140px;">
-                <svg viewBox="0 0 200 200"><circle class="ring-bg" cx="100" cy="100" r="85"></circle><circle class="ring-fill" cx="100" cy="100" r="85" stroke="var(--purple)" style="stroke-dasharray: 534; stroke-dashoffset: 200;"></circle></svg>
-                <div class="gauge-text"><small>RESTANT</small><br><b id="budget-txt">0€</b></div>
-            </div>
+            <input type="number" id="limit-input" placeholder="Limite mensuelle" pattern="[0-9]*">
+            <button class="btn-ios purple" id="save-limit">Fixer le budget</button>
+            <div id="budget-status" style="text-align:center; color:var(--dim); font-size:12px"></div>
         </div>
         <div class="card">
-            <input type="text" id="name" placeholder="Nom">
-            <input type="number" id="amount" placeholder="Montant">
-            <button class="btn btn-green" onclick="add('gain')">+ ENTRÉE</button>
-            <button class="btn btn-red" onclick="add('loss')">- DÉPENSE</button>
+            <input type="text" id="op-name" placeholder="Nom (ex: Courses)">
+            <input type="number" id="op-amount" placeholder="Montant" pattern="[0-9]*">
+            <button class="btn-ios green" id="add-gain">+ Entrée d'argent</button>
+            <button class="btn-ios red" id="add-loss">- Dépense</button>
         </div>
     </div>
 
-    <div id="scr3" class="screen">
+    <div id="scr-cal" class="screen">
         <h2 style="text-align:center">Calendrier</h2>
-        <div class="card" style="text-align:center">Fonction de défilement active.</div>
+        <div class="card" style="text-align:center; padding:40px 10px;">
+            Accès aux 10 prochaines années disponible via le défilement.
+        </div>
     </div>
 
     <nav class="nav">
-        <button class="active" onclick="show('scr1', this)">Global</button>
-        <button onclick="show('scr2', this)">Budget</button>
-        <button onclick="show('scr3', this)">Calendrier</button>
+        <button class="nav-btn active" id="nav-1">Global</button>
+        <button class="nav-btn" id="nav-2">Budget</button>
+        <button class="nav-btn" id="nav-3">Calendrier</button>
     </nav>
 
+    <script>
+        let db = JSON.parse(localStorage.getItem('zenbudget_db')) || { base: 1047.92, limit: 0, tx: [] };
+        const circ = 2 * Math.PI * 85;
+
+        // Fonction pour rafraîchir les visuels
+        function refresh() {
+            const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
+            const ins = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
+            const bal = db.base + ins - out;
+
+            document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
+            const pct = Math.min(100, (bal/2500)*100);
+            document.getElementById('ring-global').style.strokeDasharray = circ;
+            document.getElementById('ring-global').style.strokeDashoffset = circ - (pct/100)*circ;
+
+            const listHtml = db.tx.slice(-5).reverse().map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
+            document.getElementById('list-global').innerHTML = listHtml || "Aucune opération";
+            
+            localStorage.setItem('zenbudget_db', JSON.stringify(db));
+        }
+
+        // Gestionnaire de clic forcé pour iPhone
+        function setupBtn(id, action) {
+            const el = document.getElementById(id);
+            const handler = (e) => {
+                e.preventDefault();
+                document.activeElement.blur(); // Ferme le clavier
+                action();
+                refresh();
+            };
+            el.addEventListener('click', handler);
+            el.addEventListener('touchstart', handler);
+        }
+
+        window.onload = () => {
+            // Navigation
+            setupBtn('nav-1', () => { switchScr('scr-global', 'nav-1') });
+            setupBtn('nav-2', () => { switchScr('scr-budget', 'nav-2') });
+            setupBtn('nav-3', () => { switchScr('scr-cal', 'nav-3') });
+
+            // Actions Budget
+            setupBtn('save-limit', () => {
+                const v = parseFloat(document.getElementById('limit-input').value);
+                if(!isNaN(v)) { db.limit = v; alert("Budget fixé !"); }
+            });
+
+            setupBtn('add-gain', () => {
+                const n = document.getElementById('op-name').value;
+                const a = parseFloat(document.getElementById('op-amount').value);
+                if(n && a) { db.tx.push({n, a, d: new Date().toDateString()}); }
+            });
+
+            setupBtn('add-loss', () => {
+                const n = document.getElementById('op-name').value;
+                const a = parseFloat(document.getElementById('op-amount').value);
+                if(n && a) { db.tx.push({n, a: -a, d: new Date().toDateString()}); }
+            });
+
+            refresh();
+        };
+
+        function switchScr(sid, bid) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(sid).classList.add('active');
+            document.getElementById(bid).classList.add('active');
+        }
+    </script>
 </body>
 </html>
