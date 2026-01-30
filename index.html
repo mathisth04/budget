@@ -99,9 +99,6 @@
         const circ = 534;
 
        async function syncToWidget(bal, rem) {
-    // 1. Vérification de sécurité
-    if(!GIST_ID || !GIST_TOKEN || GIST_ID.includes("TON_ID")) return;
-
     const pct = db.limit > 0 ? Math.max(0, Math.min(100, (rem / db.limit) * 100)) : 0;
     const content = JSON.stringify({ 
         balance: bal.toFixed(2), 
@@ -109,11 +106,16 @@
         percent: pct 
     });
 
+    // Remplace ici directement pour tester
+    const MON_TOKEN = "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"; 
+    const MON_ID = "8e02db67fe02bec847a864858b9206ae";
+
     try {
-        const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        const res = await fetch(`https://api.github.com/gists/${MON_ID}`, {
             method: 'PATCH',
             headers: { 
-                'Authorization': `token ${GIST_TOKEN}`,
+                'Authorization': 'token ' + MON_TOKEN,
+                'Accept': 'application/vnd.github.v3+json',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
@@ -123,12 +125,14 @@
 
         if (!res.ok) {
             const errorLog = await res.json();
-            alert("Erreur GitHub : " + errorLog.message);
+            alert("GitHub rejette le token : " + errorLog.message);
         } else {
             console.log("Synchro réussie !");
+            // Optionnel : enlève l'alerte une fois que ça marche
+            alert("Succès ! Ton Gist est mis à jour."); 
         }
     } catch (e) {
-        alert("Problème de connexion : " + e.message);
+        alert("Erreur de connexion : " + e.message);
     }
 }
         function refresh() {
