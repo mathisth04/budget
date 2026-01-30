@@ -98,19 +98,39 @@
         let sDate = new Date().toLocaleDateString('fr-FR');
         const circ = 534;
 
-        async function syncToWidget(bal, rem) {
-            if(!GIST_ID || !GIST_TOKEN || GIST_ID === "TON_ID_ICI") return;
-            const pct = db.limit > 0 ? Math.max(0, Math.min(100, (rem / db.limit) * 100)) : 0;
-            const content = JSON.stringify({ balance: bal.toFixed(2), remaining: rem.toFixed(2), percent: pct });
-            try {
-                await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Bearer ${GIST_TOKEN}` },
-                    body: JSON.stringify({ files: { "budget.json": { content } } })
-                });
-            } catch (e) { console.error("Synchro impossible"); }
-        }
+       async function syncToWidget(bal, rem) {
+    // 1. Vérification de sécurité
+    if(!GIST_ID || !GIST_TOKEN || GIST_ID.includes("TON_ID")) return;
 
+    const pct = db.limit > 0 ? Math.max(0, Math.min(100, (rem / db.limit) * 100)) : 0;
+    const content = JSON.stringify({ 
+        balance: bal.toFixed(2), 
+        remaining: rem.toFixed(2), 
+        percent: pct 
+    });
+
+    try {
+        const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+            method: 'PATCH',
+            headers: { 
+                'Authorization': `token ${GIST_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                files: { "budget.json": { content: content } } 
+            })
+        });
+
+        if (!res.ok) {
+            const errorLog = await res.json();
+            alert("Erreur GitHub : " + errorLog.message);
+        } else {
+            console.log("Synchro réussie !");
+        }
+    } catch (e) {
+        alert("Problème de connexion : " + e.message);
+    }
+}
         function refresh() {
             const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
             const ins = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
