@@ -139,7 +139,19 @@
                 }
             }
             renderCal();
+            // Sauvegarde locale classique
             localStorage.setItem('zen_db', JSON.stringify(db));
+
+            // Pour Scriptable (si ouvert dans Safari/PWA)
+            const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
+            const ins = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
+            const bal = db.base + ins - out;
+            const rem = db.limit - out + ins;
+
+            // On crée un petit résumé pour le widget
+            const widgetData = { balance: bal, remaining: rem, lastUpdate: new Date().getTime() };
+            // Note : Le stockage de fichiers via navigateur est limité, 
+            // l'idéal est de copier ce JSON manuellement ou via iCloud si tu es expert.
         }
 
         function updateRing(id, val, max) {
