@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -14,49 +14,45 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
-            font-family: -apple-system, system-ui, sans-serif; 
+            font-family: -apple-system, sans-serif; 
             background: var(--bg); color: #fff; margin: 0; 
-            padding: calc(30px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom)) 20px;
-            overflow-x: hidden;
-            overflow-y: auto;
+            padding: calc(40px + env(safe-area-inset-top)) 20px calc(110px + env(safe-area-inset-bottom)) 20px;
+            /* On laisse le scroll naturel pour aider iOS à libérer le clavier */
         }
 
-        /* CHAMPS DE SAISIE : Priorité maximale à l'interaction */
+        /* CHAMPS DE SAISIE : LE PLUS SIMPLE POSSIBLE POUR iOS */
         input, select { 
             width: 100%; 
             padding: 16px; 
-            margin: 10px 0; 
+            margin: 12px 0; 
             border-radius: 12px; 
             background: #ffffff !important; 
             color: #000000 !important; 
-            font-size: 17px !important; /* Taille critique pour iPhone */
-            border: 2px solid transparent;
+            font-size: 17px !important; 
+            border: 1px solid #ccc;
             display: block;
-            position: relative;
-            z-index: 10; /* S'assure d'être au-dessus de tout */
+            /* Désactive les interférences Safari */
             -webkit-user-select: text !important;
             user-select: text !important;
-            appearance: none;
             -webkit-appearance: none;
+            appearance: none;
         }
 
-        input:focus { border-color: var(--cyan); outline: none; }
-        input:disabled { background: #333 !important; color: #777 !important; cursor: not-allowed; }
+        input:disabled { background: #222 !important; color: #666 !important; border: none; }
 
-        .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; position: relative; z-index: 1; }
+        .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
         
-        .btn-ios { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 15px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; cursor: pointer; }
+        .btn-ios { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 15px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; }
         .purple { background: var(--purple); } .green { background: var(--green); color: #000; } .red { background: var(--red); color: #000; } .gray { background: #333; }
-        .btn-ios:disabled { opacity: 0.3; }
-
+        
         .nav { 
             position: fixed; bottom: 0; left: 0; right: 0; 
             height: calc(75px + env(safe-area-inset-bottom)); 
-            background: rgba(17, 17, 17, 0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            display: flex; z-index: 1000; border-top: 1px solid #333;
+            background: #111; /* Couleur unie sans flou pour éviter les bugs de clic */
+            display: flex; z-index: 9999; border-top: 1px solid #333;
             padding-bottom: env(safe-area-inset-bottom);
         }
-        .nav-btn { flex: 1; border: none; background: none; color: #666; font-size: 10px; font-weight: bold; }
+        .nav-btn { flex: 1; border: none; background: none; color: #666; font-size: 10px; font-weight: bold; text-transform: uppercase; }
         .nav-btn.active { color: var(--cyan); }
 
         .screen { display: none; }
@@ -158,7 +154,7 @@
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('zen_db_v7')) || { 
+        let db = JSON.parse(localStorage.getItem('zen_db_vFinal')) || { 
             base: 0, limit: 0, budgetFixed: false, lastMonth: new Date().getMonth(), tx: [], projects: [], rec: [] 
         };
         const circ = 534;
@@ -168,9 +164,9 @@
         function refresh() {
             const now = new Date().getMonth();
             if (db.lastMonth !== now) {
-                const out = db.tx.reduce((s,t)=>t.a<0?s+Math.abs(t.a):s,0);
-                const ins = db.tx.reduce((s,t)=>t.a>0?s+t.a:s,0);
-                const residue = db.limit - out + ins;
+                const outTotal = db.tx.reduce((s,t)=>t.a<0?s+Math.abs(t.a):s,0);
+                const insTotal = db.tx.reduce((s,t)=>t.a>0?s+t.a:s,0);
+                const residue = db.limit - outTotal + insTotal;
                 if (residue > 0 && db.projects.length > 0) db.projects[0].saved += residue;
                 db.tx = []; db.limit = 0; db.budgetFixed = false; db.lastMonth = now;
                 db.rec.forEach(r => db.tx.push({...r, d: new Date().toLocaleDateString('fr-FR')}));
@@ -184,7 +180,7 @@
             document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
             document.getElementById('txt-budget-rem').innerText = rem.toFixed(2) + '€';
             updateRing('ring-global', bal, 5000);
-            updateRing('ring-budget', rem, db.limit);
+            updateRing('ring-budget', rem, db.limit || 1);
 
             document.getElementById('limit-input').disabled = db.budgetFixed;
             document.getElementById('btn-fix-budget').disabled = db.budgetFixed;
@@ -202,7 +198,7 @@
 
             renderProjects();
             renderCal();
-            localStorage.setItem('zen_db_v7', JSON.stringify(db));
+            localStorage.setItem('zen_db_vFinal', JSON.stringify(db));
         }
 
         function updateRing(id, val, max) {
@@ -289,6 +285,7 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active'); btn.classList.add('active');
+            window.scrollTo(0,0);
         }
         window.onload = refresh;
     </script>
