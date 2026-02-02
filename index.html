@@ -1,28 +1,27 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZenBudget</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ZenBudget">
 
-<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10541/10541912.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10042/10042171.png">
 
-<style>
-    /* Empêche le rebond élastique de Safari et rend l'app plus fluide */
-    html, body { 
-        height: 100%; 
-        overflow: hidden; 
-        position: fixed; 
-        width: 100%;
-    }
-    body {
-        overflow-y: scroll;
-        -webkit-overflow-scrolling: touch;
-    }
-</style>
+    <style>
+        /* Empêche le rebond et ajuste l'affichage pour le mode plein écran */
+        html, body { 
+            height: 100%; 
+            overflow: hidden; 
+            position: fixed; 
+            width: 100%;
+            background-color: #050505; /* Assure un fond noir pendant le chargement */
+        }
+        body {
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch;
+            padding-top: env(safe-area-inset-top); /* Évite que le haut soit caché par l'encoche */
+        }
+    </style>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
