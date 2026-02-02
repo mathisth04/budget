@@ -2,257 +2,224 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ZenBudget</title>
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
     <style>
-        :root { --bg: #050505; --card: #1c1c1e; --cyan: #0a84ff; --purple: #5e5ce6; --green: #30d158; --red: #ff453a; }
-
-        /* LIBÈRE LE CLAVIER : On retire tout blocage de sélection ou de scroll */
-        html, body {
-            background: var(--bg);
-            color: white;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, sans-serif;
-            -webkit-text-size-adjust: 100%;
-        }
-
-        body { 
-            padding: calc(40px + env(safe-area-inset-top)) 20px 150px 20px;
-            overflow-y: scroll; /* Force le scroll natif */
-        }
-
-        /* CHAMPS DE SAISIE : LOOK NATIF POUR FORCER IOS */
+        :root { --bg: #000; --card: #1c1c1e; --blue: #0a84ff; --green: #30d158; --red: #ff453a; --purple: #5e5ce6; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 20px 20px 100px 20px; }
+        
+        /* Style des entrées - Standard iOS pour garantir le fonctionnement du clavier */
         input, select { 
-            display: block !important;
-            width: 100% !important; 
-            height: 50px !important;
-            margin: 15px 0 !important;
-            padding: 12px !important;
-            font-size: 17px !important; /* Anti-zoom iOS */
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            border: 1px solid #8e8e93 !important;
-            border-radius: 10px !important;
-            /* Priorité tactile */
-            pointer-events: auto !important;
-            -webkit-user-select: text !important;
-            user-select: text !important;
+            width: 100%; height: 45px; margin: 10px 0; border-radius: 8px; 
+            font-size: 16px; background: #fff; color: #000; border: 1px solid #ccc;
         }
-
+        
         .screen { display: none; }
-        .screen.active { display: block; }
+        .active { display: block; }
+        .card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; color: #fff; margin: 5px 0; }
+        .btn-blue { background: var(--blue); }
+        .btn-green { background: var(--green); color: #000; }
+        .btn-red { background: var(--red); }
+        .btn-purple { background: var(--purple); }
 
-        .card { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #333; }
+        .nav { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: #111; display: flex; border-top: 1px solid #333; }
+        .nav-btn { flex: 1; border: none; background: none; color: #888; font-size: 12px; }
+        .nav-btn.sel { color: var(--blue); }
 
-        .btn-ios { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; margin: 8px 0; color: white; cursor: pointer; }
-        .purple { background: var(--purple); } 
-        .green { background: var(--green); color: black; } 
-        .red { background: var(--red); color: black; }
-
-        .nav { 
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            height: calc(80px + env(safe-area-inset-bottom)); 
-            background: #1c1c1e; display: flex; 
-            border-top: 1px solid #333; z-index: 9999;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .nav-btn { flex: 1; border: none; background: none; color: #8e8e93; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-        .nav-btn.active { color: var(--cyan); }
-
-        .tx-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #333; font-size: 14px; }
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; border-radius: 50%; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #333; }
         
         /* Jauge Projet */
-        .proj-row { display: flex; align-items: center; margin-bottom: 15px; }
-        .v-bar { width: 12px; height: 50px; background: #333; border-radius: 6px; overflow: hidden; margin-right: 15px; }
-        .v-fill { background: var(--purple); width: 100%; transition: height 0.5s; }
+        .p-box { display: flex; align-items: center; gap: 10px; }
+        .v-gauge { width: 10px; height: 50px; background: #333; position: relative; border-radius: 5px; overflow: hidden; }
+        .v-fill { position: absolute; bottom: 0; width: 100%; background: var(--purple); transition: height 0.5s; }
+
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .cal-day { padding: 10px 0; border-radius: 50%; }
     </style>
 </head>
-<body onclick=""> <div id="scr-global" class="screen active">
-        <h2 style="text-align:center">Solde Global</h2>
-        <div style="text-align:center; margin-bottom:30px">
-            <h1 id="txt-global" style="font-size:48px; color:var(--cyan); margin:0">0€</h1>
-        </div>
+<body>
+
+    <div id="scr-global" class="screen active">
+        <h2>Solde Total</h2>
+        <h1 id="val-global" style="font-size: 40px; color: var(--blue);">0€</h1>
         <div class="card">
-            <input type="number" id="new-total" placeholder="Ajuster solde" inputmode="decimal">
-            <button class="btn-ios" style="background:#444" onclick="adjustTotal()">Mise à jour</button>
+            <input type="number" id="adj-val" placeholder="Ajuster le solde total">
+            <button class="btn btn-blue" onclick="adjustTotal()">Mise à niveau</button>
         </div>
-        <div id="list-global" class="card"></div>
+        <div id="list-global"></div>
     </div>
 
     <div id="scr-budget" class="screen">
-        <h2 style="text-align:center">Budget</h2>
-        <div style="text-align:center; margin-bottom:30px">
-            <small>RESTANT</small>
-            <h1 id="txt-budget-rem" style="font-size:48px; color:var(--green); margin:0">0€</h1>
+        <h2>Budget du mois</h2>
+        <h1 id="val-budget" style="font-size: 40px; color: var(--green);">0€</h1>
+        <div class="card" id="budget-entry">
+            <input type="number" id="limit-val" placeholder="Fixer la limite mensuelle">
+            <button class="btn btn-purple" id="btn-fix" onclick="setLimit()">Valider le budget</button>
         </div>
         <div class="card">
-            <p id="budget-status" style="text-align:center; font-size:12px; color:#8e8e93"></p>
-            <input type="number" id="limit-input" placeholder="Budget du mois (€)" inputmode="decimal">
-            <button id="btn-fix-budget" class="btn-ios purple" onclick="fixBudget()">Valider Budget</button>
-        </div>
-        <div class="card">
-            <input type="text" id="op-name" placeholder="Nom">
-            <input type="number" id="op-amount" placeholder="Montant (€)" inputmode="decimal">
-            <select id="op-cat">
-                <option value="Abonnement">Abonnement</option>
-                <option value="Courses">Courses</option>
-                <option value="Fast-food">Fast-food</option>
-                <option value="Loisirs">Loisirs</option>
-                <option value="Santé">Santé</option>
-                <option value="Autre">Autre</option>
+            <input type="text" id="op-n" placeholder="Nom">
+            <input type="number" id="op-a" placeholder="Montant">
+            <select id="op-c">
+                <option value="Abonnement">📱 Abonnement</option>
+                <option value="Courses">🛒 Courses</option>
+                <option value="Fast-food">🍔 Fast-food</option>
+                <option value="Loisirs">🎉 Loisirs</option>
+                <option value="Santé">💊 Santé</option>
+                <option value="Autre">✨ Autre</option>
             </select>
-            <button class="btn-ios green" onclick="addMoney(1)">+ Revenu</button>
-            <button class="btn-ios red" onclick="addMoney(-1)">- Dépense</button>
+            <label><input type="checkbox" id="op-r"> Récurrent (chaque mois)</label>
+            <button class="btn btn-green" onclick="addOp(1)">+ Revenu</button>
+            <button class="btn btn-red" onclick="addOp(-1)">- Dépense</button>
         </div>
     </div>
 
     <div id="scr-projects" class="screen">
-        <h2 style="text-align:center">Projets</h2>
+        <h2>Projets Épargne</h2>
         <div class="card">
-            <input type="text" id="pj-name" placeholder="Nom du projet">
-            <input type="number" id="pj-cost" placeholder="Objectif (€)" inputmode="decimal">
-            <button class="btn-ios purple" onclick="addProject()">+ Créer</button>
+            <input type="text" id="pj-n" placeholder="Nom du projet">
+            <input type="number" id="pj-c" placeholder="Coût total">
+            <button class="btn btn-purple" onclick="addPj()">+ Créer Projet</button>
         </div>
-        <div id="projects-list"></div>
+        <div id="list-projects"></div>
     </div>
 
     <div id="scr-cal" class="screen">
-        <h2 style="text-align:center">Calendrier</h2>
+        <h2 id="cal-m">Calendrier</h2>
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
-                <button onclick="changeMonth(-1)" style="color:white; background:none; border:none; font-size:24px">◀</button>
-                <b id="cal-title" style="text-transform:capitalize"></b>
-                <button onclick="changeMonth(1)" style="color:white; background:none; border:none; font-size:24px">▶</button>
-            </div>
-            <div id="cal-grid" class="cal-grid"></div>
+            <div class="cal-grid" id="cal-grid"></div>
         </div>
-        <div id="cal-details" class="card"></div>
+        <div id="cal-det" class="card"></div>
     </div>
 
     <nav class="nav">
-        <button class="nav-btn active" onclick="tab('scr-global', this)">Global</button>
+        <button class="nav-btn sel" onclick="tab('scr-global', this)">Global</button>
         <button class="nav-btn" onclick="tab('scr-budget', this)">Budget</button>
         <button class="nav-btn" onclick="tab('scr-projects', this)">Projets</button>
         <button class="nav-btn" onclick="tab('scr-cal', this)">Calendrier</button>
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('zen_db_final_fix')) || { 
-            base: 0, limit: 0, budgetFixed: false, lastMonth: new Date().getMonth(), tx: [], projects: [], rec: [] 
+        let db = JSON.parse(localStorage.getItem('zen_db_v10')) || { 
+            base: 0, limit: 0, lMonth: new Date().getMonth(), budgetFixed: false, tx: [], pjs: [], rec: [] 
         };
-        let vDate = new Date();
-        let sDateStr = new Date().toLocaleDateString('fr-FR');
-
-        // FORCE FOCUS ON IOS
-        document.querySelectorAll('input, select').forEach(el => {
-            el.addEventListener('touchstart', function() {
-                this.focus();
-            });
-        });
 
         function refresh() {
+            // Logique fin de mois
             const now = new Date().getMonth();
-            if (db.lastMonth !== now) {
-                const residue = db.limit - db.tx.reduce((s,t)=>t.a<0?s+Math.abs(t.a):s,0) + db.tx.reduce((s,t)=>t.a>0?s+t.a:s,0);
-                if (residue > 0 && db.projects.length > 0) db.projects[0].saved += residue;
-                db.tx = []; db.limit = 0; db.budgetFixed = false; db.lastMonth = now;
+            if (db.lMonth !== now) {
+                const balBudget = db.limit - db.tx.reduce((s,t)=> t.a < 0 ? s + Math.abs(t.a) : s, 0) + db.tx.reduce((s,t)=> t.a > 0 ? s + t.a : s, 0);
+                if (balBudget > 0 && db.pjs.length > 0) db.pjs[0].saved += balBudget;
+                db.tx = []; db.limit = 0; db.budgetFixed = false; db.lMonth = now;
                 db.rec.forEach(r => db.tx.push({...r, d: new Date().toLocaleDateString('fr-FR')}));
             }
 
-            const out = db.tx.reduce((s, t) => t.a < 0 ? s + Math.abs(t.a) : s, 0);
-            const ins = db.tx.reduce((s, t) => t.a > 0 ? s + t.a : s, 0);
-            const bal = db.base + ins - out;
-            const rem = db.limit - out + ins;
+            const out = db.tx.reduce((s,t)=> t.a < 0 ? s + Math.abs(t.a) : s, 0);
+            const ins = db.tx.reduce((s,t)=> t.a > 0 ? s + t.a : s, 0);
+            const total = db.base + ins - out;
+            const reste = db.limit - out + ins;
 
-            document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
-            document.getElementById('txt-budget-rem').innerText = rem.toFixed(2) + '€';
+            document.getElementById('val-global').innerText = total.toFixed(2) + '€';
+            document.getElementById('val-budget').innerText = reste.toFixed(2) + '€';
+            
+            // Verrouillage budget
+            document.getElementById('budget-entry').style.display = db.budgetFixed ? 'none' : 'block';
 
-            document.getElementById('limit-input').disabled = db.budgetFixed;
-            document.getElementById('btn-fix-budget').disabled = db.budgetFixed;
-            document.getElementById('budget-status').innerText = db.budgetFixed ? "🔒 Budget verrouillé" : "🔓 Définissez votre budget";
+            // Liste Global
+            document.getElementById('list-global').innerHTML = db.tx.slice(-5).reverse().map((t, i) => `
+                <div class="row">
+                    <span>${t.n}</span>
+                    <span><b>${t.a}€</b> <button onclick="delTx(${db.tx.length-1-i})" style="color:red; background:none; border:none; margin-left:10px">X</button></span>
+                </div>`).join('');
 
-            const last5 = db.tx.slice(-5).reverse().map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a.toFixed(2)}€</b></div>`).join('');
-            document.getElementById('list-global').innerHTML = last5 || "Aucune activité";
-
-            renderProjects();
+            renderPjs();
             renderCal();
-            localStorage.setItem('zen_db_final_fix', JSON.stringify(db));
+            localStorage.setItem('zen_db_v10', JSON.stringify(db));
         }
 
-        function fixBudget() {
-            const v = parseFloat(document.getElementById('limit-input').value);
+        function setLimit() {
+            const v = parseFloat(document.getElementById('limit-val').value);
             if(v) { db.limit = v; db.budgetFixed = true; refresh(); }
         }
 
-        function addMoney(dir) {
-            const a = parseFloat(document.getElementById('op-amount').value);
-            if(!isNaN(a)) {
-                db.tx.push({ n: document.getElementById('op-name').value || "Op", a: a*dir, d: new Date().toLocaleDateString('fr-FR'), c: document.getElementById('op-cat').value });
-                document.getElementById('op-name').value = ""; document.getElementById('op-amount').value = "";
+        function adjustTotal() {
+            const v = parseFloat(document.getElementById('adj-val').value);
+            if(!isNaN(v)) {
+                const diff = db.tx.reduce((s,t)=>t.a>0?s+t.a:s,0) - db.tx.reduce((s,t)=>t.a<0?s+Math.abs(t.a):s,0);
+                db.base = v - diff;
+                document.getElementById('adj-val').value = "";
                 refresh();
             }
         }
 
-        function adjustTotal() {
-            const v = parseFloat(document.getElementById('new-total').value);
-            if(!isNaN(v)) {
-                db.base = v - (db.tx.reduce((s,t)=>t.a>0?s+t.a:s,0) - db.tx.reduce((s,t)=>t.a<0?s+Math.abs(t.a):s,0));
-                document.getElementById('new-total').value = ""; refresh();
+        function addOp(dir) {
+            const a = parseFloat(document.getElementById('op-a').value);
+            const n = document.getElementById('op-n').value || "Opération";
+            const c = document.getElementById('op-c').value;
+            const r = document.getElementById('op-r').checked;
+            if(!isNaN(a)) {
+                const item = { n, a: a*dir, c, d: new Date().toLocaleDateString('fr-FR'), r };
+                db.tx.push(item);
+                if(r) db.rec.push({ n, a: a*dir, c, r });
+                document.getElementById('op-n').value = ""; document.getElementById('op-a').value = "";
+                refresh();
             }
         }
 
-        function addProject() {
-            const n = document.getElementById('pj-name').value;
-            const c = parseFloat(document.getElementById('pj-cost').value);
-            if(n && c) { db.projects.push({ n, c, saved: 0 }); refresh(); }
+        function delTx(i) { db.tx.splice(i,1); refresh(); }
+
+        function addPj() {
+            const n = document.getElementById('pj-n').value;
+            const c = parseFloat(document.getElementById('pj-c').value);
+            if(n && c) { db.pjs.push({ n, c, saved: 0 }); refresh(); }
         }
 
-        function renderProjects() {
-            const list = document.getElementById('projects-list'); list.innerHTML = "";
-            db.projects.forEach((p, i) => {
+        function movePj(i, d) {
+            if(db.pjs[i+d]) { [db.pjs[i], db.pjs[i+d]] = [db.pjs[i+d], db.pjs[i]]; refresh(); }
+        }
+
+        function renderPjs() {
+            document.getElementById('list-projects').innerHTML = db.pjs.map((p, i) => {
                 const pct = Math.min(100, (p.saved / p.c) * 100);
-                list.innerHTML += `<div class="card proj-row">
-                    <div class="v-bar"><div class="v-fill" style="height:${pct}%"></div></div>
-                    <div style="flex:1"><b>${p.n}</b><br><small>${p.saved.toFixed(2)} / ${p.c}€</small></div>
-                    <button onclick="db.projects.splice(${i},1);refresh()" style="background:none;border:none;color:var(--red);font-size:20px">×</button>
+                return `<div class="card p-box">
+                    <div style="display:flex; flex-direction:column; gap:5px">
+                        <button onclick="movePj(${i},-1)">↑</button><button onclick="movePj(${i},1)">↓</button>
+                    </div>
+                    <div class="v-gauge"><div class="v-fill" style="height:${pct}%"></div></div>
+                    <div style="flex:1"><b>${p.n}</b><br><small>${p.saved.toFixed(2)}/${p.c}€</small></div>
+                    <button onclick="const v=prompt('Somme?'); if(v) {db.pjs[${i}].saved+=parseFloat(v); refresh()}">+</button>
+                    <button onclick="db.pjs.splice(${i},1);refresh()">X</button>
                 </div>`;
-            });
+            }).join('');
         }
 
         function renderCal() {
             const grid = document.getElementById('cal-grid'); grid.innerHTML = "";
-            const m = vDate.getMonth(), y = vDate.getFullYear();
-            document.getElementById('cal-title').innerText = vDate.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
-            const first = (new Date(y, m, 1).getDay() + 6) % 7;
-            for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
-            for(let d=1; d<=new Date(y, m+1, 0).getDate(); d++) {
-                const ds = `${d.toString().padStart(2,'0')}/${(m+1).toString().padStart(2,'0')}/${y}`;
-                const day = document.createElement('div');
-                day.className = 'cal-day';
-                if(ds === sDateStr) day.style.background = 'var(--purple)';
-                day.innerText = d; day.onclick = () => { sDateStr = ds; renderCal(); showDetails(ds); };
-                grid.appendChild(day);
+            const d = new Date();
+            const days = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+            for(let i=1; i<=days; i++) {
+                const div = document.createElement('div');
+                div.className = 'cal-day';
+                div.innerText = i;
+                const ds = `${i.toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+                if(db.tx.some(t => t.d === ds)) div.style.borderBottom = "2px solid var(--green)";
+                div.onclick = () => {
+                    const t = db.tx.filter(x => x.d === ds);
+                    document.getElementById('cal-det').innerHTML = `<b>${ds}</b><br>` + t.map(x=>`<div>${x.n}: ${x.a}€</div>`).join('');
+                };
+                grid.appendChild(div);
             }
         }
-        function showDetails(ds) {
-            const txs = db.tx.filter(t=>t.d===ds);
-            document.getElementById('cal-details').innerHTML = txs.map(t=>`<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Rien";
-        }
-        function changeMonth(v){ vDate.setMonth(vDate.getMonth()+v); renderCal(); }
 
         function tab(id, btn) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active'); btn.classList.add('active');
-            window.scrollTo(0,0);
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('sel'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('sel');
         }
+
         window.onload = refresh;
     </script>
 </body>
