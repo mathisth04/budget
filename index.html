@@ -1,75 +1,88 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ZenBudget</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <style>
-        :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; --gray: #666; }
-        
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        /* Palette de couleurs */
+        :root { --bg: #050505; --card: #18181b; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; }
+
+        /* RESET TOTAL POUR IOS */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
 
         body { 
             font-family: -apple-system, sans-serif; 
-            background: var(--bg); color: #fff; margin: 0; 
-            padding: calc(40px + env(safe-area-inset-top)) 20px calc(110px + env(safe-area-inset-bottom)) 20px;
-            /* On laisse le scroll naturel pour aider iOS à libérer le clavier */
+            background-color: var(--bg); 
+            color: white; 
+            margin: 0; 
+            padding: env(safe-area-inset-top) 0 calc(100px + env(safe-area-inset-bottom)) 0;
+            overflow-y: scroll; /* Force le scroll pour libérer le clavier */
         }
 
-        /* CHAMPS DE SAISIE : LE PLUS SIMPLE POSSIBLE POUR iOS */
+        /* CHAMPS DE SAISIE ULTRA-STANDARDS */
+        .input-group { padding: 0 20px; }
+        
         input, select { 
-            width: 100%; 
-            padding: 16px; 
-            margin: 12px 0; 
-            border-radius: 12px; 
-            background: #ffffff !important; 
-            color: #000000 !important; 
-            font-size: 17px !important; 
-            border: 1px solid #ccc;
-            display: block;
-            /* Désactive les interférences Safari */
-            -webkit-user-select: text !important;
-            user-select: text !important;
-            -webkit-appearance: none;
-            appearance: none;
+            display: block !important;
+            width: 100% !important; 
+            height: 55px !important;
+            margin: 10px 0 !important;
+            padding: 0 15px !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            border: 2px solid #ccc !important;
+            border-radius: 12px !important;
+            font-size: 17px !important; /* Taille anti-zoom iOS */
+            opacity: 1 !important;
+            visibility: visible !important;
+            -webkit-appearance: none; /* Reset look iOS */
         }
 
-        input:disabled { background: #222 !important; color: #666 !important; border: none; }
+        input:disabled { background: #333 !important; color: #777 !important; border: none !important; }
 
-        .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
+        /* Structure */
+        .screen { display: none; padding: 20px; }
+        .screen.active { display: block; }
         
-        .btn-ios { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 15px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; }
-        .purple { background: var(--purple); } .green { background: var(--green); color: #000; } .red { background: var(--red); color: #000; } .gray { background: #333; }
-        
+        .card { background: var(--card); border-radius: 18px; padding: 15px; margin-bottom: 20px; border: 1px solid #27272a; }
+
+        .btn-ios { 
+            width: 100%; padding: 18px; border-radius: 15px; border: none; 
+            font-size: 16px; font-weight: bold; margin: 8px 0; color: white;
+            text-transform: uppercase; cursor: pointer;
+        }
+        .purple { background: var(--purple); } 
+        .green { background: var(--green); color: black; } 
+        .red { background: var(--red); color: black; } 
+        .gray { background: #3f3f46; }
+
+        /* Navigation simplifiée sans flou */
         .nav { 
             position: fixed; bottom: 0; left: 0; right: 0; 
-            height: calc(75px + env(safe-area-inset-bottom)); 
-            background: #111; /* Couleur unie sans flou pour éviter les bugs de clic */
-            display: flex; z-index: 9999; border-top: 1px solid #333;
-            padding-bottom: env(safe-area-inset-bottom);
+            height: calc(80px + env(safe-area-inset-bottom)); 
+            background: #111; display: flex; border-top: 1px solid #333;
+            z-index: 9999;
         }
-        .nav-btn { flex: 1; border: none; background: none; color: #666; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .nav-btn { flex: 1; border: none; background: none; color: #71717a; font-size: 11px; font-weight: bold; }
         .nav-btn.active { color: var(--cyan); }
 
-        .screen { display: none; }
-        .screen.active { display: block; }
-
-        .gauge-container { position: relative; width: 160px; height: 160px; margin: 0 auto 20px; }
+        /* Jauges */
+        .gauge-container { position: relative; width: 140px; height: 140px; margin: 0 auto 20px; }
         svg.round { transform: rotate(-90deg); width: 100%; height: 100%; }
-        circle { fill: none; stroke-width: 12; stroke-linecap: round; transition: 0.8s ease-out; }
-        .bg-ring { stroke: #1a1a1a; }
-
+        circle { fill: none; stroke-width: 10; stroke-linecap: round; }
+        
+        /* Projets & Calendrier */
+        .v-gauge { width: 12px; height: 50px; background: #333; border-radius: 5px; overflow: hidden; margin-right: 15px; }
+        .v-fill { background: var(--purple); width: 100%; transition: height 0.5s; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 12px; position: relative; }
-        .has-tx::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: var(--green); border-radius: 50%; }
-
-        .v-gauge-wrapper { width: 15px; height: 60px; background: #1a1a1a; border-radius: 4px; overflow: hidden; margin-right: 12px; border: 1px solid #333; }
-        .v-gauge-fill { width: 100%; background: var(--purple); transition: height 0.6s ease; }
-        .tx-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; font-size: 14px; }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 13px; position: relative; }
+        .has-tx::after { content: ''; position: absolute; bottom: 5px; width: 4px; height: 4px; background: var(--green); border-radius: 50%; }
+        .tx-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #27272a; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -78,35 +91,35 @@
         <h2 style="text-align:center">Solde Global</h2>
         <div class="gauge-container">
             <svg class="round" viewBox="0 0 200 200">
-                <circle class="bg-ring" cx="100" cy="100" r="85"></circle>
-                <circle id="ring-global" cx="100" cy="100" r="85" stroke="var(--cyan)" stroke-dasharray="534" stroke-dashoffset="534"></circle>
+                <circle stroke="#222" cx="100" cy="100" r="85"></circle>
+                <circle id="ring-global" stroke="var(--cyan)" cx="100" cy="100" r="85" stroke-dasharray="534" stroke-dashoffset="534"></circle>
             </svg>
-            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center"><b id="txt-global" style="font-size:22px">0€</b></div>
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center"><b id="txt-global" style="font-size:24px">0€</b></div>
         </div>
         <div class="card">
-            <input type="text" id="new-total" placeholder="Ajuster solde" inputmode="decimal">
-            <button class="btn-ios gray" onclick="adjustTotal()">Mise à jour</button>
+            <input type="number" id="new-total" placeholder="Ajuster solde" step="0.01">
+            <button class="btn-ios gray" onclick="adjustTotal()">Mettre à jour</button>
         </div>
         <div id="list-global" class="card"></div>
     </div>
 
     <div id="scr-budget" class="screen">
-        <h2 style="text-align:center">Budget</h2>
+        <h2 style="text-align:center">Mon Budget</h2>
         <div class="gauge-container">
             <svg class="round" viewBox="0 0 200 200">
-                <circle class="bg-ring" cx="100" cy="100" r="85"></circle>
-                <circle id="ring-budget" cx="100" cy="100" r="85" stroke="var(--green)" stroke-dasharray="534" stroke-dashoffset="534"></circle>
+                <circle stroke="#222" cx="100" cy="100" r="85"></circle>
+                <circle id="ring-budget" stroke="var(--green)" cx="100" cy="100" r="85" stroke-dasharray="534" stroke-dashoffset="534"></circle>
             </svg>
-            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center"><small>RESTANT</small><br><b id="txt-budget-rem" style="font-size:22px">0€</b></div>
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center"><small>RESTE</small><br><b id="txt-budget-rem" style="font-size:24px">0€</b></div>
         </div>
         <div class="card">
-            <p id="budget-status" style="text-align:center; font-size:11px; margin-bottom:5px; color:var(--gray)"></p>
-            <input type="text" id="limit-input" placeholder="Budget du mois (€)" inputmode="decimal">
-            <button id="btn-fix-budget" class="btn-ios purple" onclick="fixBudget()">Fixer Budget</button>
+            <p id="budget-status" style="text-align:center; font-size:12px; color:#a1a1aa"></p>
+            <input type="number" id="limit-input" placeholder="Budget du mois (€)">
+            <button id="btn-fix-budget" class="btn-ios purple" onclick="fixBudget()">Fixer le Budget</button>
         </div>
         <div class="card">
-            <input type="text" id="op-name" placeholder="Nom opération">
-            <input type="text" id="op-amount" placeholder="Montant (€)" inputmode="decimal">
+            <input type="text" id="op-name" placeholder="Nom (ex: Loyer)">
+            <input type="number" id="op-amount" placeholder="Montant (€)" step="0.01">
             <select id="op-cat">
                 <option value="Abonnement">📱 Abonnement</option>
                 <option value="Courses">🛒 Courses</option>
@@ -115,8 +128,8 @@
                 <option value="Santé">💊 Santé</option>
                 <option value="Autre">✨ Autre</option>
             </select>
-            <label style="display:flex; align-items:center; gap:10px; margin:10px 0; font-size:13px">
-                <input type="checkbox" id="op-recur" style="width:20px; height:20px"> Récurrent
+            <label style="display:flex; align-items:center; margin:15px 0; font-size:14px">
+                <input type="checkbox" id="op-recur" style="width:22px; height:22px; margin-right:10px"> Dépense récurrente
             </label>
             <button class="btn-ios green" onclick="addMoney(1)">+ Revenu</button>
             <button class="btn-ios red" onclick="addMoney(-1)">- Dépense</button>
@@ -124,11 +137,11 @@
     </div>
 
     <div id="scr-projects" class="screen">
-        <h2 style="text-align:center">Projets</h2>
+        <h2 style="text-align:center">Mes Projets</h2>
         <div class="card">
-            <input type="text" id="pj-name" placeholder="Nom projet">
-            <input type="text" id="pj-cost" placeholder="Cible (€)" inputmode="decimal">
-            <button class="btn-ios purple" onclick="addProject()">+ Créer</button>
+            <input type="text" id="pj-name" placeholder="Nom du projet">
+            <input type="number" id="pj-cost" placeholder="Objectif (€)">
+            <button class="btn-ios purple" onclick="addProject()">+ Créer Projet</button>
         </div>
         <div id="projects-list"></div>
     </div>
@@ -137,13 +150,13 @@
         <h2 style="text-align:center">Calendrier</h2>
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                <button onclick="changeMonth(-1)" style="color:var(--cyan); background:none; border:none; font-size:24px">◀</button>
+                <button onclick="changeMonth(-1)" style="color:var(--cyan); background:none; border:none; font-size:24px; padding:10px">◀</button>
                 <b id="cal-title"></b>
-                <button onclick="changeMonth(1)" style="color:var(--cyan); background:none; border:none; font-size:24px">▶</button>
+                <button onclick="changeMonth(1)" style="color:var(--cyan); background:none; border:none; font-size:24px; padding:10px">▶</button>
             </div>
             <div id="cal-grid" class="cal-grid"></div>
         </div>
-        <div id="cal-details" class="card"></div>
+        <div id="cal-details" class="card">Cliquez sur un jour</div>
     </div>
 
     <nav class="nav">
@@ -154,7 +167,7 @@
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('zen_db_vFinal')) || { 
+        let db = JSON.parse(localStorage.getItem('zen_db_v8')) || { 
             base: 0, limit: 0, budgetFixed: false, lastMonth: new Date().getMonth(), tx: [], projects: [], rec: [] 
         };
         const circ = 534;
@@ -179,40 +192,36 @@
 
             document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
             document.getElementById('txt-budget-rem').innerText = rem.toFixed(2) + '€';
-            updateRing('ring-global', bal, 5000);
-            updateRing('ring-budget', rem, db.limit || 1);
+            
+            document.getElementById('ring-global').style.strokeDashoffset = circ - (Math.min(100, (bal/5000)*100)/100)*circ;
+            document.getElementById('ring-budget').style.strokeDashoffset = circ - (Math.min(100, (rem/(db.limit||1))*100)/100)*circ;
 
             document.getElementById('limit-input').disabled = db.budgetFixed;
             document.getElementById('btn-fix-budget').disabled = db.budgetFixed;
-            document.getElementById('budget-status').innerText = db.budgetFixed ? "🔒 Budget verrouillé" : "🔓 Définissez votre budget";
+            document.getElementById('budget-status').innerText = db.budgetFixed ? "🔒 Budget fixé pour le mois." : "🔓 Entrez votre budget.";
 
             const last5 = db.tx.slice(-5).reverse().map((t, i) => `
                 <div class="tx-row">
                     <span>${t.n}</span>
                     <div style="display:flex; align-items:center">
                         <b style="color:${t.a < 0 ? 'var(--red)' : 'var(--green)'}">${t.a.toFixed(2)}€</b>
-                        <button style="color:var(--red); background:none; border:none; margin-left:10px" onclick="deleteTx(${db.tx.length-1-i})">×</button>
+                        <button style="color:var(--red); background:none; border:none; margin-left:15px; font-size:22px" onclick="deleteTx(${db.tx.length-1-i})">×</button>
                     </div>
                 </div>`).join('');
-            document.getElementById('list-global').innerHTML = last5 || "Aucune activité";
+            document.getElementById('list-global').innerHTML = "<b>Activités :</b><br>" + (last5 || "Aucune");
 
             renderProjects();
             renderCal();
-            localStorage.setItem('zen_db_vFinal', JSON.stringify(db));
-        }
-
-        function updateRing(id, val, max) {
-            const pct = max > 0 ? Math.max(0, Math.min(100, (val / max) * 100)) : 0;
-            document.getElementById(id).style.strokeDashoffset = circ - (pct / 100) * circ;
+            localStorage.setItem('zen_db_v8', JSON.stringify(db));
         }
 
         function fixBudget() {
-            const v = parseFloat(document.getElementById('limit-input').value.replace(',','.'));
+            const v = parseFloat(document.getElementById('limit-input').value);
             if(v) { db.limit = v; db.budgetFixed = true; refresh(); }
         }
 
         function addMoney(dir) {
-            const a = parseFloat(document.getElementById('op-amount').value.replace(',','.'));
+            const a = parseFloat(document.getElementById('op-amount').value);
             if(!isNaN(a)) {
                 const n = document.getElementById('op-name').value || "Opération";
                 const c = document.getElementById('op-cat').value;
@@ -225,19 +234,19 @@
         }
 
         function adjustTotal() {
-            const v = parseFloat(document.getElementById('new-total').value.replace(',','.'));
+            const v = parseFloat(document.getElementById('new-total').value);
             if(!isNaN(v)) {
-                const diff = db.tx.reduce((s,t)=>t.a>0?s+t.a:s,0) - db.tx.reduce((s,t)=>t.a<0?s+Math.abs(t.a):s,0);
-                db.base = v - diff;
+                const currentDiff = db.tx.reduce((s,t)=>t.a>0?s+t.a:s,0) - db.tx.reduce((s,t)=>t.a<0?s+Math.abs(t.a):s,0);
+                db.base = v - currentDiff;
                 document.getElementById('new-total').value = ""; refresh();
             }
         }
 
-        function deleteTx(i) { db.tx.splice(i,1); refresh(); }
+        function deleteTx(i) { if(confirm("Supprimer ?")) { db.tx.splice(i,1); refresh(); } }
 
         function addProject() {
             const n = document.getElementById('pj-name').value;
-            const c = parseFloat(document.getElementById('pj-cost').value.replace(',','.'));
+            const c = parseFloat(document.getElementById('pj-cost').value);
             if(n && c) { db.projects.push({ n, c, saved: 0 }); refresh(); }
         }
 
@@ -246,19 +255,19 @@
             db.projects.forEach((p, i) => {
                 const pct = Math.min(100, (p.saved / p.c) * 100);
                 list.innerHTML += `<div class="card" style="display:flex; align-items:center">
-                    <div style="display:flex; flex-direction:column; gap:5px; margin-right:10px">
-                        <button style="color:#fff;background:#333;border:none;padding:5px;border-radius:4px" onclick="movePj(${i},-1)">↑</button>
-                        <button style="color:#fff;background:#333;border:none;padding:5px;border-radius:4px" onclick="movePj(${i},1)">↓</button>
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-right:15px">
+                        <button style="color:white;background:#333;border:none;padding:8px;border-radius:5px" onclick="movePj(${i},-1)">↑</button>
+                        <button style="color:white;background:#333;border:none;padding:8px;border-radius:5px" onclick="movePj(${i},1)">↓</button>
                     </div>
-                    <div class="v-gauge-wrapper"><div class="v-gauge-fill" style="height:${pct}%"></div></div>
+                    <div class="v-gauge"><div class="v-fill" style="height:${pct}%"></div></div>
                     <div style="flex:1"><b>${p.n}</b><br><small>${p.saved.toFixed(2)}€ / ${p.c}€</small></div>
-                    <button class="btn-ios green" style="width:40px; padding:10px" onclick="manDep(${i})">+</button>
-                    <button style="color:var(--red); background:none; border:none; font-size:20px" onclick="db.projects.splice(${i},1);refresh()">×</button>
+                    <button class="btn-ios green" style="width:50px; padding:10px" onclick="manDep(${i})">+</button>
+                    <button style="color:var(--red); background:none; border:none; font-size:24px; margin-left:10px" onclick="db.projects.splice(${i},1);refresh()">×</button>
                 </div>`;
             });
         }
         function movePj(i,d){ if(db.projects[i+d]){ [db.projects[i],db.projects[i+d]]=[db.projects[i+d],db.projects[i]]; refresh(); }}
-        function manDep(i){ const v=prompt("Montant ?"); if(v) {db.projects[i].saved+=parseFloat(v.replace(',','.')); refresh();}}
+        function manDep(i){ const v=prompt("Somme ?"); if(v) {db.projects[i].saved+=parseFloat(v); refresh();}}
 
         function renderCal() {
             const grid = document.getElementById('cal-grid'); grid.innerHTML = "";
@@ -269,7 +278,7 @@
             for(let d=1; d<=new Date(y, m+1, 0).getDate(); d++) {
                 const ds = `${d.toString().padStart(2,'0')}/${(m+1).toString().padStart(2,'0')}/${y}`;
                 const day = document.createElement('div'); day.className = 'cal-day' + (db.tx.some(t=>t.d===ds)?' has-tx':'');
-                if(ds === sDateStr) day.style.background = 'var(--purple)';
+                if(ds === sDateStr) day.style.backgroundColor = 'var(--purple)';
                 day.innerText = d; day.onclick = () => { sDateStr = ds; renderCal(); showDetails(ds); };
                 grid.appendChild(day);
             }
