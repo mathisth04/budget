@@ -3,248 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-    <title>ZenBudget Pro</title>
+    <title>ZenBudget</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/180/7000ff/ffffff?text=ZB">
     <style>
-        :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; --gray: #888; }
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; padding: env(safe-area-inset-top) 20px 120px 20px; }
-        
-        /* Correction Clavier iOS */
-        input, select { 
-            -webkit-user-select: text !important;
-            width: 100%; padding: 16px; margin: 8px 0; border-radius: 12px; 
-            background: #fff !important; color: #000 !important; 
-            border: 2px solid #444; font-size: 17px !important;
-        }
-
-        .nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(75px + env(safe-area-inset-bottom)); background: #111; display: flex; z-index: 1000; border-top: 1px solid #333; }
-        .nav-btn { flex: 1; border: none; background: none; color: #666; font-size: 10px; font-weight: bold; text-transform: uppercase; padding-bottom: 15px; }
-        .nav-btn.active { color: var(--cyan); }
+        :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 20px 20px 100px 20px; }
+        .card { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
+        input, select { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: none; font-size: 17px; background: #fff; color: #000; }
+        button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; margin: 5px 0; color: #fff; text-transform: uppercase; cursor: pointer; }
+        .btn-cyan { background: var(--cyan); color: #000; }
+        .btn-green { background: var(--green); color: #000; }
+        .btn-red { background: var(--red); color: #000; }
+        .btn-purple { background: var(--purple); }
         .screen { display: none; }
-        .screen.active { display: block; }
-        .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
-        .btn-ios { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; }
-        .purple { background: var(--purple); } .green { background: var(--green); color: #000; } .red { background: var(--red); color: #000; } .cyan { background: var(--cyan); color: #000; }
-        
-        .gauge-container { position: relative; width: 140px; height: 140px; margin: 0 auto 10px; }
-        svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        circle { fill: none; stroke-width: 12; stroke-linecap: round; transition: 0.8s; }
-        .bg-ring { stroke: #1a1a1a; }
-        .gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
-        
-        .stat-bar-container { margin: 10px 0; }
-        .stat-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-        .stat-rail { background: #222; height: 8px; border-radius: 4px; overflow: hidden; }
-        .stat-fill { background: var(--cyan); height: 100%; transition: width 0.5s; }
-
-        .v-gauge-wrapper { display: flex; align-items: flex-end; width: 35px; height: 100px; background: #1a1a1a; border-radius: 10px; overflow: hidden; border: 1px solid #333; margin-right: 15px; }
-        .v-gauge-fill { width: 100%; background: linear-gradient(to top, var(--purple), var(--cyan)); transition: height 1s; }
-        .project-item { display: flex; align-items: center; margin-bottom: 15px; }
-        .prio-btns { display: flex; flex-direction: column; gap: 5px; margin-left: 10px; }
-        .prio-btn { background: #222; border: none; color: #fff; border-radius: 5px; padding: 8px; font-size: 12px; }
-
-        .tx-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; font-size: 14px; }
-        .del-btn { background: none; border: none; color: var(--red); font-size: 20px; padding-left: 10px; }
-        .status-badge { font-size: 10px; padding: 4px 8px; border-radius: 10px; background: #1a332a; color: var(--green); font-weight: bold; display: inline-block; border: 1px solid var(--green); margin-bottom: 10px;}
+        .active { display: block; }
+        .nav { position: fixed; bottom: 0; left: 0; right: 0; background: #111; display: flex; height: 70px; border-top: 1px solid #333; }
+        .nav-btn { flex: 1; background: none; color: #666; font-size: 11px; }
+        .nav-btn.sel { color: var(--cyan); }
     </style>
 </head>
 <body>
 
-    <div id="scr-global" class="screen active">
-        <h2 style="text-align:center">Patrimoine</h2>
-        <div class="gauge-container">
-            <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-global" cx="100" cy="100" r="85" stroke="var(--cyan)" stroke-dasharray="534" stroke-dashoffset="534"></circle></svg>
-            <div class="gauge-data"><b id="txt-global" style="font-size:20px">0€</b></div>
-        </div>
-        <div class="card"><div id="stats-area"></div></div>
+    <div id="scr-1" class="screen active">
+        <h2>Patrimoine</h2>
         <div class="card">
-            <input type="text" id="level-input" placeholder="Solde total réel" inputmode="decimal">
-            <button class="btn-ios cyan" onclick="levelUp()">Mettre à jour</button>
+            <h1 id="val-total" style="text-align:center; color:var(--cyan)">0.00€</h1>
         </div>
-        <div id="list-global" class="card"></div>
+        <div class="card">
+            <input type="number" id="inp-total" placeholder="Nouveau solde réel" inputmode="decimal">
+            <button class="btn-cyan" onclick="setTotal()">Mettre à jour</button>
+        </div>
     </div>
 
-    <div id="scr-budget" class="screen">
-        <h2 style="text-align:center">Budget</h2>
-        <div class="card">
-            <div id="ui-setup">
-                <b>Budget du mois :</b>
-                <input type="text" id="limit-input" placeholder="Montant max (€)" inputmode="decimal">
-                <button class="btn-ios green" onclick="lockBudget()">Valider</button>
-            </div>
-            <div id="ui-locked" style="display:none; text-align:center;">
-                <span class="status-badge">✓ DÉFINI</span>
-                <p id="label-lock" style="font-size:18px; color:var(--green); font-weight:bold;"></p>
-            </div>
+    <div id="scr-2" class="screen">
+        <h2>Budget</h2>
+        <div class="card" id="box-lock">
+            <input type="number" id="inp-lim" placeholder="Budget du mois (€)" inputmode="decimal">
+            <button class="btn-green" onclick="setLim()">Fixer le budget</button>
         </div>
-        <div class="gauge-container">
-            <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-budget" cx="100" cy="100" r="85" stroke="var(--green)" stroke-dasharray="534" stroke-dashoffset="534"></circle></svg>
-            <div class="gauge-data"><small>RESTANT</small><br><b id="txt-budget-rem" style="font-size:20px">0€</b></div>
+        <div class="card" id="box-status" style="display:none; text-align:center">
+            <b style="color:var(--green)">✓ Budget fixé</b>
         </div>
         <div class="card">
-            <input type="text" id="op-name" placeholder="Nom de l'opération">
-            <select id="op-cat">
-                <option value="Abonnements">📱 Abonnements</option>
-                <option value="Courses">🛒 Courses</option>
-                <option value="Fast-Food">🍔 Fast-food</option>
-                <option value="Loisirs">🎉 Loisirs</option>
-                <option value="Santé">💊 Santé</option>
-                <option value="Autre">✨ Autre</option>
-            </select>
-            <input type="text" id="op-amount" placeholder="Montant (€)" inputmode="decimal">
-            <div style="display:flex; gap:10px">
-                <button class="btn-ios green" onclick="addMoney(1)">+ Reçu</button>
-                <button class="btn-ios red" onclick="addMoney(-1)">- Dépensé</button>
-            </div>
+            <input type="text" id="op-n" placeholder="Nom">
+            <input type="number" id="op-a" placeholder="Montant (€)" inputmode="decimal">
+            <button class="btn-red" onclick="addTx()">Ajouter dépense</button>
         </div>
-        <div class="card">
-            <b>🔄 Abonnements</b>
-            <div id="list-subs"></div>
-        </div>
-        <button class="btn-ios purple" onclick="closeMonth()">Clôturer le mois</button>
     </div>
 
-    <div id="scr-projets" class="screen">
-        <h2 style="text-align:center">Projets</h2>
-        <div class="card">
-            <input type="text" id="pj-name" placeholder="Nom du projet">
-            <input type="text" id="pj-goal" placeholder="Objectif (€)" inputmode="decimal">
-            <button class="btn-ios purple" onclick="addProject()">+ Ajouter</button>
-        </div>
-        <div id="project-list"></div>
-    </div>
-
-    <div id="scr-cal" class="screen">
-        <h2 style="text-align:center">Journal</h2>
-        <div class="card" id="cal-grid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:5px; text-align:center"></div>
-        <div class="card" id="cal-details"></div>
-    </div>
+    <button onclick="localStorage.clear(); location.reload();" style="font-size:10px; background:none; color:#333">Réinitialiser l'App</button>
 
     <nav class="nav">
-        <button class="nav-btn active" onclick="tab('scr-global', this)">Global</button>
-        <button class="nav-btn" onclick="tab('scr-budget', this)">Budget</button>
-        <button class="nav-btn" onclick="tab('scr-projets', this)">Projets</button>
-        <button class="nav-btn" onclick="tab('scr-cal', this)">Journal</button>
+        <button class="nav-btn sel" onclick="tab('scr-1', this)">Global</button>
+        <button class="nav-btn" onclick="tab('scr-2', this)">Budget</button>
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('ZenBudget_Final')) || { base:0, limit:0, lockDate:"", tx:[], projects:[], subs:[] };
-        let cDate = new Date();
-
-        function save() { localStorage.setItem('ZenBudget_Final', JSON.stringify(db)); }
-
-        function refresh() {
-            const currentM = (new Date().getMonth()+1)+"/"+new Date().getFullYear();
-            document.getElementById('ui-setup').style.display = (db.lockDate === currentM) ? 'none' : 'block';
-            document.getElementById('ui-locked').style.display = (db.lockDate === currentM) ? 'block' : 'none';
-            if(db.lockDate === currentM) document.getElementById('label-lock').innerText = db.limit.toFixed(2)+" €";
-
-            const out = db.tx.filter(t=>t.a<0).reduce((s,t)=>s+Math.abs(t.a),0);
-            const ins = db.tx.filter(t=>t.a>0).reduce((s,t)=>s+t.a,0);
-            const bal = db.base + ins - out;
-            const rem = db.limit - out + ins;
-
-            document.getElementById('txt-global').innerText = bal.toFixed(2)+"€";
-            document.getElementById('txt-budget-rem').innerText = rem.toFixed(2)+"€";
-            
-            updateRing('ring-global', bal, 2000);
-            updateRing('ring-budget', rem, db.limit);
-            renderStats(currentM);
-            renderProjects();
-            renderSubs();
-            renderCal();
-            
-            const last = db.tx.slice(-3).reverse().map(t=>`<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
-            document.getElementById('list-global').innerHTML = "<b>Activités :</b>"+last;
-            save();
+        let data = JSON.parse(localStorage.getItem('zb_db')) || { base: 0, lim: 0, tx: [], month: "" };
+        
+        function save() { 
+            localStorage.setItem('zb_db', JSON.stringify(data)); 
+            render();
         }
 
-        function updateRing(id, v, m) {
-            const p = m > 0 ? Math.max(0, Math.min(100, (v/m)*100)) : 0;
-            const el = document.getElementById(id);
-            if(el) el.style.strokeDashoffset = 534 - (p/100)*534;
-        }
-
-        function lockBudget() {
-            const v = parseFloat(document.getElementById('limit-input').value.replace(',','.'));
-            if(!isNaN(v)) { 
-                db.limit = v; 
-                db.lockDate = (new Date().getMonth()+1)+"/"+new Date().getFullYear(); 
-                refresh(); 
+        function render() {
+            const sum = data.tx.reduce((s, t) => s + t.a, 0);
+            document.getElementById('val-total').innerText = (data.base + sum).toFixed(2) + "€";
+            
+            const curM = new Date().getMonth();
+            if (data.month == curM) {
+                document.getElementById('box-lock').style.display = "none";
+                document.getElementById('box-status').style.display = "block";
             }
         }
 
-        function addMoney(dir) {
-            const n = document.getElementById('op-name').value || "Opération";
-            const a = parseFloat(document.getElementById('op-amount').value.replace(',','.'));
-            const c = document.getElementById('op-cat').value;
-            if(!isNaN(a)) {
-                const amount = a * dir;
-                if(c === "Abonnements" && dir < 0) db.subs.push({id:Date.now(), n, a:amount});
-                db.tx.push({n, c, a:amount, d:new Date().toLocaleDateString('fr-FR'), ts:Date.now()});
-                document.getElementById('op-amount').value = ""; refresh();
+        function setTotal() {
+            const val = parseFloat(document.getElementById('inp-total').value);
+            if (!isNaN(val)) {
+                data.base = val - data.tx.reduce((s, t) => s + t.a, 0);
+                document.getElementById('inp-total').value = "";
+                save();
             }
         }
 
-        function renderStats(m) {
-            const txs = db.tx.filter(t=>t.d.includes(m) && t.a<0);
-            const total = txs.reduce((s,t)=>s+Math.abs(t.a),0);
-            let html = "";
-            ["Abonnements","Courses","Fast-Food","Loisirs","Santé","Autre"].forEach(c=>{
-                const amt = txs.filter(t=>t.c===c).reduce((s,t)=>s+Math.abs(t.a),0);
-                if(amt>0) html += `<div class="stat-bar-container"><div class="stat-label"><span>${c}</span><b>${amt}€</b></div><div class="stat-rail"><div class="stat-fill" style="width:${(amt/total*100)}%"></div></div></div>`;
-            });
-            document.getElementById('stats-area').innerHTML = html || "Aucune dépense";
+        function setLim() {
+            const val = parseFloat(document.getElementById('inp-lim').value);
+            if (!isNaN(val)) {
+                data.lim = val;
+                data.month = new Date().getMonth();
+                save();
+            }
         }
 
-        function renderProjects() {
-            document.getElementById('project-list').innerHTML = db.projects.map((p,i)=>`
-                <div class="project-item card">
-                    <div class="v-gauge-wrapper"><div class="v-gauge-fill" style="height:${Math.min(100,(p.s/p.g)*100)}%"></div></div>
-                    <div style="flex:1"><b>${p.n}</b><br><small>${p.s}/${p.g}€</small></div>
-                    <button class="del-btn" onclick="db.projects.splice(${i},1);refresh()">🗑️</button>
-                </div>`).join('');
-        }
-
-        function renderSubs() {
-            document.getElementById('list-subs').innerHTML = db.subs.map((s,i)=>`
-                <div class="tx-row"><span>${s.n}</span><b>${s.a}€</b><button class="del-btn" onclick="db.subs.splice(${i},1);refresh()">🗑️</button></div>`).join('');
-        }
-
-        function addProject() {
-            const n = document.getElementById('pj-name').value, g = parseFloat(document.getElementById('pj-goal').value);
-            if(n && g) { db.projects.push({n, g, s:0}); refresh(); }
-        }
-
-        function levelUp() {
-            const v = parseFloat(document.getElementById('level-input').value);
-            if(!isNaN(v)) { db.base = v - db.tx.reduce((s,t)=>s+t.a,0); refresh(); }
+        function addTx() {
+            const n = document.getElementById('op-n').value || "Achat";
+            const a = parseFloat(document.getElementById('op-a').value);
+            if (!isNaN(a)) {
+                data.tx.push({ n, a: -a });
+                document.getElementById('op-a').value = "";
+                save();
+            }
         }
 
         function tab(id, btn) {
-            document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-            document.getElementById(id).classList.add('active'); btn.classList.add('active');
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('sel'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('sel');
         }
 
-        function renderCal() {
-            const grid = document.getElementById('cal-grid'); grid.innerHTML = "";
-            const days = new Date(cDate.getFullYear(), cDate.getMonth()+1, 0).getDate();
-            for(let d=1; d<=days; d++) {
-                const el = document.createElement('div'); el.className = 'cal-day';
-                el.innerText = d; grid.appendChild(el);
-            }
-        }
-
-        function closeMonth() {
-            const rem = db.limit - db.tx.filter(t=>t.a<0).reduce((s,t)=>s+Math.abs(t.a),0) + db.tx.filter(t=>t.a>0).reduce((s,t)=>s+t.a,0);
-            if(rem>0 && db.projects.length>0) { db.projects[0].s += rem; alert(rem+"€ épargnés !"); refresh(); }
-        }
-
-        window.onload = refresh;
+        window.onload = render;
     </script>
 </body>
 </html>
