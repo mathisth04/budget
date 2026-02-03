@@ -3,104 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZenBudget</title>
+    <title>ZenBudget Pro</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/180/7000ff/ffffff?text=ZB">
     <style>
-        :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; }
+        :root { --bg: #050505; --card: #121217; --cyan: #00f2ff; --purple: #7000ff; --green: #00ff88; --red: #ff4d4d; --gray: #888; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; padding: env(safe-area-inset-top) 20px 120px 20px; }
         
-        body { 
-            font-family: -apple-system, sans-serif; 
-            background: var(--bg); color: #fff; margin: 0; 
-            padding: env(safe-area-inset-top) 20px 120px 20px;
-            overflow-x: hidden;
-        }
-
-        /* Navigation */
-        .nav { 
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            height: calc(70px + env(safe-area-inset-bottom)); 
-            background: #111; display: flex; z-index: 1000; border-top: 1px solid #333;
-        }
-        .nav-btn { flex: 1; border: none; background: none; color: #666; font-size: 11px; font-weight: bold; text-transform: uppercase; padding-bottom: 10px; }
+        .nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(75px + env(safe-area-inset-bottom)); background: #111; display: flex; z-index: 1000; border-top: 1px solid #333; }
+        .nav-btn { flex: 1; border: none; background: none; color: #666; font-size: 10px; font-weight: bold; text-transform: uppercase; padding-bottom: 15px; }
         .nav-btn.active { color: var(--cyan); }
-
+        
         .screen { display: none; }
         .screen.active { display: block; }
-
         .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
         
-        /* Inputs validés pour iPhone 14 */
-        input { 
-            width: 100%; padding: 16px; margin: 8px 0; border-radius: 12px; 
-            background: #fff !important; color: #000 !important; 
-            border: 2px solid #444; font-size: 17px; display: block;
-        }
-
-        .btn-ios { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 16px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; }
-        .purple { background: var(--purple); } .green { background: var(--green); color: #000; } .red { background: var(--red); color: #000; }
-
-        /* Jauges */
+        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; background: #fff !important; color: #000 !important; border: 2px solid #444; font-size: 16px; }
+        .btn-ios { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 14px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; }
+        .purple { background: var(--purple); } .green { background: var(--green); color: #000; } .red { background: var(--red); color: #000; } .cyan { background: var(--cyan); color: #000; }
+        
         .gauge-container { position: relative; width: 140px; height: 140px; margin: 0 auto 10px; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        circle { fill: none; stroke-width: 12; stroke-linecap: round; transition: 0.8s ease-out; }
+        circle { fill: none; stroke-width: 12; stroke-linecap: round; transition: 0.8s; }
         .bg-ring { stroke: #1a1a1a; }
         .gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
+        
+        /* Stats Bars */
+        .stat-bar-container { margin: 10px 0; }
+        .stat-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+        .stat-rail { background: #222; height: 8px; border-radius: 4px; overflow: hidden; }
+        .stat-fill { background: var(--cyan); height: 100%; transition: width 0.5s; }
 
-        /* Calendrier (Lundi au Dimanche) */
-        .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 10px; color: var(--cyan); margin-bottom: 5px; }
+        /* Jauge Projet Verticale */
+        .v-gauge-wrapper { display: flex; align-items: flex-end; width: 40px; height: 150px; background: #1a1a1a; border-radius: 20px; overflow: hidden; border: 1px solid #333; margin-right: 15px; }
+        .v-gauge-fill { width: 100%; background: linear-gradient(to top, var(--purple), var(--cyan)); transition: height 1s; }
+        .project-item { display: flex; align-items: center; margin-bottom: 20px; }
+
+        .tx-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; font-size: 14px; }
+        .del-btn { background: none; border: none; color: var(--red); font-size: 18px; padding-left: 10px; }
+        .cat-tag { font-size: 10px; opacity: 0.6; display: block; }
+        
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .cal-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; font-size: 13px; position: relative; border: 1px solid transparent; }
-        .selected { background: var(--purple); color: white; border: 1px solid var(--purple); }
+        .cal-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; font-size: 13px; position: relative; }
+        .selected { background: var(--purple); color: white; }
         .today { border: 1px solid var(--cyan); }
         .has-data::after { content: ''; width: 4px; height: 4px; background: var(--green); border-radius: 50%; position: absolute; bottom: 3px; }
-
-        .tx-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 14px; }
     </style>
-  <link rel="apple-touch-icon" href="https://via.placeholder.com/180/7000ff/ffffff?text=ZB">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
 </head>
 <body>
 
     <div id="scr-global" class="screen active">
-        <h2 style="text-align:center">Solde Global</h2>
+        <h2 style="text-align:center">Mon Patrimoine</h2>
         <div class="gauge-container">
             <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-global" cx="100" cy="100" r="85" stroke="var(--cyan)" stroke-dasharray="534" stroke-dashoffset="534"></circle></svg>
             <div class="gauge-data"><b id="txt-global" style="font-size:20px">0€</b></div>
+        </div>
+        
+        <div class="card" id="cat-stats">
+            <b>Répartition du mois</b><br><br>
+            <div id="stats-area"></div>
+        </div>
+
+        <div class="card">
+            <input type="text" id="level-input" placeholder="Nouveau solde total" inputmode="decimal">
+            <button class="btn-ios cyan" onclick="levelUp()">Mettre à niveau le solde</button>
         </div>
         <div id="list-global" class="card"></div>
     </div>
 
     <div id="scr-budget" class="screen">
-        <h2 style="text-align:center">Budget</h2>
+        <h2 style="text-align:center">Budget Mensuel</h2>
         <div class="gauge-container">
             <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-budget" cx="100" cy="100" r="85" stroke="var(--green)" stroke-dasharray="534" stroke-dashoffset="534"></circle></svg>
             <div class="gauge-data"><small>RESTANT</small><br><b id="txt-budget-rem" style="font-size:20px">0€</b></div>
         </div>
         <div class="card">
-            <p id="lock-msg" style="color:var(--red); font-size:11px; text-align:center"></p>
-            <input type="text" id="limit-input" placeholder="Limite mensuelle" inputmode="decimal">
-            <button class="btn-ios purple" onclick="fixBudget()">Valider Budget</button>
+            <input type="text" id="op-name" placeholder="Nom de l'opération">
+            <select id="op-cat">
+                <option value="Abonnements">📱 Abonnements</option>
+                <option value="Courses">🛒 Courses</option>
+                <option value="Fast-Food">🍔 Fast-food</option>
+                <option value="Loisirs">🎉 Loisirs</option>
+                <option value="Santé">💊 Santé</option>
+                <option value="Autre">✨ Autre</option>
+            </select>
+            <input type="text" id="op-amount" placeholder="Montant (€)" inputmode="decimal">
+            <div style="display:flex; gap:10px">
+                <button class="btn-ios green" onclick="addMoney(1)">+ Revenu</button>
+                <button class="btn-ios red" onclick="addMoney(-1)">- Dépense</button>
+            </div>
         </div>
         <div class="card">
-            <input type="text" id="op-name" placeholder="Nom">
-            <input type="text" id="op-amount" placeholder="Montant (€)" inputmode="decimal">
-            <button class="btn-ios green" onclick="addMoney(1)">+ Entrée</button>
-            <button class="btn-ios red" onclick="addMoney(-1)">- Dépense</button>
+            <button class="btn-ios purple" onclick="closeMonth()">🔒 Clôturer & Épargner</button>
+            <p style="font-size:10px; color:var(--gray); text-align:center">Le reste du budget part vers votre projet.</p>
         </div>
     </div>
 
+    <div id="scr-projets" class="screen">
+        <h2 style="text-align:center">Mes Projets</h2>
+        <div class="card">
+            <input type="text" id="pj-name" placeholder="Nom du projet (ex: iPhone 16)">
+            <input type="text" id="pj-goal" placeholder="Objectif (€)" inputmode="decimal">
+            <button class="btn-ios purple" onclick="addProject()">+ Créer Projet</button>
+        </div>
+        <div id="project-list"></div>
+    </div>
+
     <div id="scr-cal" class="screen">
-        <h2 style="text-align:center">Calendrier</h2>
+        <h2 style="text-align:center">Historique</h2>
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                <button onclick="mMonth(-1)" style="color:var(--cyan); background:none; border:none; font-size:24px; padding:10px">◀</button>
-                <b id="cal-title" style="text-transform: capitalize;"></b>
-                <button onclick="mMonth(1)" style="color:var(--cyan); background:none; border:none; font-size:24px; padding:10px">▶</button>
-            </div>
-            <div class="cal-header">
-                <div>LUN</div><div>MAR</div><div>MER</div><div>JEU</div><div>VEN</div><div>SAM</div><div>DIM</div>
+                <button onclick="mMonth(-1)" style="color:var(--cyan); background:none; border:none; font-size:24px">◀</button>
+                <b id="cal-title"></b>
+                <button onclick="mMonth(1)" style="color:var(--cyan); background:none; border:none; font-size:24px">▶</button>
             </div>
             <div class="cal-grid" id="cal-grid"></div>
         </div>
@@ -108,16 +125,18 @@
     </div>
 
     <nav class="nav">
-        <button class="nav-btn active" id="btn-n1" onclick="tab('scr-global', this)">Global</button>
-        <button class="nav-btn" id="btn-n2" onclick="tab('scr-budget', this)">Budget</button>
-        <button class="nav-btn" id="btn-n3" onclick="tab('scr-cal', this)">Calendrier</button>
+        <button class="nav-btn active" onclick="tab('scr-global', this)">Global</button>
+        <button class="nav-btn" onclick="tab('scr-budget', this)">Budget</button>
+        <button class="nav-btn" onclick="tab('scr-projets', this)">Projets</button>
+        <button class="nav-btn" onclick="tab('scr-cal', this)">Journal</button>
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('zen_db')) || { base: 1047.92, limit: 0, lDate: null, tx: [] };
-        let cDate = new Date(); // Date affichée dans le calendrier
-        let sDate = new Date().toLocaleDateString('fr-FR'); // Date sélectionnée
-        const circ = 534;
+        let db = JSON.parse(localStorage.getItem('zen_pro_db')) || { 
+            base: 0, limit: 1000, tx: [], projects: [] 
+        };
+        let cDate = new Date();
+        let sDate = new Date().toLocaleDateString('fr-FR');
 
         function refresh() {
             const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
@@ -126,43 +145,122 @@
             const rem = db.limit - out + ins;
 
             document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
-            updateRing('ring-global', bal, 2500);
+            updateRing('ring-global', bal, bal > 2000 ? bal : 2000);
             document.getElementById('txt-budget-rem').innerText = rem.toFixed(2) + '€';
             updateRing('ring-budget', rem, db.limit);
 
-            const last5 = db.tx.slice(-5).reverse().map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
-            document.getElementById('list-global').innerHTML = "<b>Dernières activités :</b><br>" + (last5 || "Aucune transaction");
+            updateStats();
 
-            if (db.lDate) {
-                const d = new Date(db.lDate);
-                if (d.getMonth() === new Date().getMonth() && d.getFullYear() === new Date().getFullYear()) {
-                    document.getElementById('limit-input').disabled = true;
-                    document.getElementById('lock-msg').innerText = "🔒 Budget mensuel fixé.";
-                }
-            }
+            const last5 = db.tx.slice(-5).reverse().map((t, i) => `
+                <div class="tx-row">
+                    <span><small class="cat-tag">${t.c || 'Autre'}</small>${t.n}</span>
+                    <div style="display:flex; align-items:center">
+                        <b>${t.a}€</b>
+                        <button class="del-btn" onclick="deleteTx(${db.tx.length - 1 - i})">🗑️</button>
+                    </div>
+                </div>`).join('');
+            document.getElementById('list-global').innerHTML = "<b>Dernières activités :</b>" + (last5 || "<br>Aucune donnée");
+
+            renderProjects();
             renderCal();
-            localStorage.setItem('zen_db', JSON.stringify(db));
+            localStorage.setItem('zen_pro_db', JSON.stringify(db));
         }
 
         function updateRing(id, val, max) {
-            const el = document.getElementById(id);
             const pct = max > 0 ? Math.max(0, Math.min(100, (val / max) * 100)) : 0;
-            el.style.strokeDashoffset = circ - (pct / 100) * circ;
+            document.getElementById(id).style.strokeDashoffset = 534 - (pct / 100) * 534;
         }
 
-        function fixBudget() {
-            const v = document.getElementById('limit-input').value.replace(',', '.');
-            if(v) { db.limit = parseFloat(v); db.lDate = new Date().toISOString(); refresh(); }
+        function updateStats() {
+            const monthStr = (cDate.getMonth() + 1).toString().padStart(2, '0') + '/' + cDate.getFullYear();
+            const monthlyTx = db.tx.filter(t => t.d.includes(monthStr) && t.a < 0);
+            const totalOut = monthlyTx.reduce((s, t) => s + Math.abs(t.a), 0);
+            
+            const cats = ["Abonnements", "Courses", "Fast-Food", "Loisirs", "Santé", "Autre"];
+            let html = "";
+
+            cats.forEach(c => {
+                const amt = monthlyTx.filter(t => t.c === c).reduce((s, t) => s + Math.abs(t.a), 0);
+                const pct = totalOut > 0 ? (amt / totalOut * 100) : 0;
+                if(amt > 0) {
+                    html += `
+                    <div class="stat-bar-container">
+                        <div class="stat-label"><span>${c}</span><b>${amt.toFixed(2)}€</b></div>
+                        <div class="stat-rail"><div class="stat-fill" style="width:${pct}%"></div></div>
+                    </div>`;
+                }
+            });
+            document.getElementById('stats-area').innerHTML = html || "<small style='color:#666'>Aucune dépense ce mois-ci</small>";
         }
 
         function addMoney(dir) {
             const n = document.getElementById('op-name').value || (dir > 0 ? "Revenu" : "Dépense");
             const a = document.getElementById('op-amount').value.replace(',', '.');
+            const c = document.getElementById('op-cat').value;
             if(a && !isNaN(a)) {
-                db.tx.push({ n, a: parseFloat(a) * dir, d: new Date().toLocaleDateString('fr-FR') });
-                document.getElementById('op-name').value = "";
+                db.tx.push({ n, c, a: parseFloat(a) * dir, d: new Date().toLocaleDateString('fr-FR'), ts: Date.now() });
                 document.getElementById('op-amount').value = "";
+                document.getElementById('op-name').value = "";
                 refresh();
+            }
+        }
+
+        function deleteTx(index) {
+            if(confirm("Supprimer cette opération ?")) {
+                db.tx.splice(index, 1);
+                refresh();
+            }
+        }
+
+        function levelUp() {
+            const v = document.getElementById('level-input').value.replace(',', '.');
+            if(v && !isNaN(v)) {
+                const currentTxBal = db.tx.reduce((s, t) => s + t.a, 0);
+                db.base = parseFloat(v) - currentTxBal;
+                document.getElementById('level-input').value = "";
+                refresh();
+            }
+        }
+
+        function addProject() {
+            const n = document.getElementById('pj-name').value;
+            const g = document.getElementById('pj-goal').value.replace(',', '.');
+            if(n && g) {
+                db.projects.push({ n, g: parseFloat(g), s: 0 });
+                document.getElementById('pj-name').value = "";
+                document.getElementById('pj-goal').value = "";
+                refresh();
+            }
+        }
+
+        function renderProjects() {
+            document.getElementById('project-list').innerHTML = db.projects.map((p, i) => {
+                const pct = Math.min(100, (p.s / p.g) * 100);
+                return `
+                <div class="project-item card">
+                    <div class="v-gauge-wrapper">
+                        <div class="v-gauge-fill" style="height:${pct}%"></div>
+                    </div>
+                    <div style="flex:1">
+                        <b>${p.n}</b><br>
+                        <small>${p.s.toFixed(2)} / ${p.g}€ (${pct.toFixed(1)}%)</small>
+                    </div>
+                    <button class="del-btn" onclick="db.projects.splice(${i},1); refresh()">🗑️</button>
+                </div>`;
+            }).join('');
+        }
+
+        function closeMonth() {
+            const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
+            const ins = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
+            const rem = db.limit - out + ins;
+
+            if(rem > 0 && db.projects.length > 0) {
+                db.projects[0].s += rem; 
+                alert(`Félicitations ! ${rem.toFixed(2)}€ ajoutés à ${db.projects[0].n}`);
+                refresh();
+            } else {
+                alert("Rien à épargner ou aucun projet créé.");
             }
         }
 
@@ -171,68 +269,31 @@
             document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             btn.classList.add('active');
-            window.scrollTo(0, 0); // Empêche le décalage vers le bas
-            if(id === 'scr-cal') renderCal();
+            refresh();
         }
 
         function renderCal() {
-            const grid = document.getElementById('cal-grid'); 
-            grid.innerHTML = "";
-            const m = cDate.getMonth(), y = cDate.getFullYear();
-            
-            const options = { month: 'long', year: 'numeric' };
-            document.getElementById('cal-title').innerText = cDate.toLocaleDateString('fr-FR', options);
-
-            // Premier jour du mois (0=Dim, 1=Lun...)
-            let firstDay = new Date(y, m, 1).getDay();
-            // Ajustement pour que Lundi = 0, Vendredi = 4, Dimanche = 6
-            let startOffset = (firstDay === 0) ? 6 : firstDay - 1;
-            
-            const daysInMonth = new Date(y, m + 1, 0).getDate();
-
-            // Cases vides au début
-            for(let i=0; i < startOffset; i++) {
-                grid.appendChild(document.createElement('div'));
-            }
-
-            // Jours du mois
-            for(let d=1; d<=daysInMonth; d++) {
-                const dayStr = `${d.toString().padStart(2,'0')}/${(m+1).toString().padStart(2,'0')}/${y}`;
-                const el = document.createElement('div');
-                el.className = 'cal-day';
-                if(dayStr === sDate) el.classList.add('selected');
-                if(dayStr === new Date().toLocaleDateString('fr-FR')) el.classList.add('today');
-                
-                // Vérifier s'il y a des transactions ce jour-là
-                if(db.tx.some(t => t.d === dayStr)) el.classList.add('has-data');
-
+            const grid = document.getElementById('cal-grid'); grid.innerHTML = "";
+            document.getElementById('cal-title').innerText = cDate.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+            const days = new Date(cDate.getFullYear(), cDate.getMonth()+1, 0).getDate();
+            for(let d=1; d<=days; d++) {
+                const ds = `${d.toString().padStart(2,'0')}/${(cDate.getMonth()+1).toString().padStart(2,'0')}/${cDate.getFullYear()}`;
+                const el = document.createElement('div'); el.className = 'cal-day';
+                if(ds === sDate) el.classList.add('selected');
+                if(db.tx.some(t => t.d === ds)) el.classList.add('has-data');
                 el.innerText = d;
-                el.onclick = (e) => { 
-                    e.preventDefault();
-                    sDate = dayStr; 
-                    renderCal(); 
-                    showDayDetails(dayStr); 
-                };
+                el.onclick = () => { sDate = ds; refresh(); showDayDetails(ds); };
                 grid.appendChild(el);
             }
-            showDayDetails(sDate);
         }
 
         function showDayDetails(ds) {
             const txs = db.tx.filter(t => t.d === ds);
-            let html = `<b>Détails du ${ds}</b><br>`;
-            if(txs.length > 0) {
-                html += txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
-            } else {
-                html += "<div style='margin-top:10px; color:#666'>Aucune opération</div>";
-            }
-            document.getElementById('cal-details').innerHTML = html;
+            document.getElementById('cal-details').innerHTML = `<b>Opérations du ${ds}</b><br>` + 
+                (txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Aucune");
         }
 
-        function mMonth(v) { 
-            cDate.setMonth(cDate.getMonth() + v); 
-            renderCal(); 
-        }
+        function mMonth(v) { cDate.setMonth(cDate.getMonth()+v); refresh(); }
 
         window.onload = refresh;
     </script>
