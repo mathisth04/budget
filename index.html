@@ -21,7 +21,8 @@
         .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
         
         input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; background: #fff !important; color: #000 !important; border: 2px solid #444; font-size: 16px; }
-        .btn-ios { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 14px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; }
+        .btn-ios { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 14px; font-weight: 800; margin: 5px 0; color: #fff; text-transform: uppercase; transition: 0.3s; }
+        .btn-ios:disabled { opacity: 0.3; background: #333 !important; color: #666 !important; }
         .purple { background: var(--purple); } .green { background: var(--green); color: #000; } .red { background: var(--red); color: #000; } .cyan { background: var(--cyan); color: #000; }
         
         .gauge-container { position: relative; width: 140px; height: 140px; margin: 0 auto 10px; }
@@ -30,11 +31,6 @@
         .bg-ring { stroke: #1a1a1a; }
         .gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
         
-        .stat-bar-container { margin: 10px 0; }
-        .stat-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-        .stat-rail { background: #222; height: 8px; border-radius: 4px; overflow: hidden; }
-        .stat-fill { background: var(--cyan); height: 100%; transition: width 0.5s; }
-
         .v-gauge-wrapper { display: flex; align-items: flex-end; width: 35px; height: 100px; background: #1a1a1a; border-radius: 10px; overflow: hidden; border: 1px solid #333; margin-right: 15px; }
         .v-gauge-fill { width: 100%; background: linear-gradient(to top, var(--purple), var(--cyan)); transition: height 1s; }
         .project-item { display: flex; align-items: center; margin-bottom: 15px; }
@@ -43,12 +39,11 @@
 
         .tx-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; font-size: 14px; }
         .del-btn { background: none; border: none; color: var(--red); font-size: 18px; padding-left: 10px; }
-        .cat-tag { font-size: 10px; opacity: 0.6; display: block; }
+        .status-badge { font-size: 10px; padding: 4px 8px; border-radius: 10px; background: #333; color: var(--green); font-weight: bold; margin-bottom: 10px; display: inline-block; }
         
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; font-size: 13px; position: relative; }
         .selected { background: var(--purple); color: white; }
-        .today { border: 1px solid var(--cyan); }
         .has-data::after { content: ''; width: 4px; height: 4px; background: var(--green); border-radius: 50%; position: absolute; bottom: 3px; }
     </style>
 </head>
@@ -62,7 +57,7 @@
         </div>
         <div class="card"><div id="stats-area"></div></div>
         <div class="card">
-            <input type="text" id="level-input" placeholder="Nouveau solde total" inputmode="decimal">
+            <input type="text" id="level-input" placeholder="Ajuster solde total" inputmode="decimal">
             <button class="btn-ios cyan" onclick="levelUp()">Mise à niveau solde</button>
         </div>
         <div id="list-global" class="card"></div>
@@ -70,12 +65,24 @@
 
     <div id="scr-budget" class="screen">
         <h2 style="text-align:center">Budget Mensuel</h2>
-        <div class="gauge-container">
-            <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-budget" cx="100" cy="100" r="85" stroke="var(--green)" stroke-dasharray="534" stroke-dashoffset="534"></circle></svg>
-            <div class="gauge-data"><small>RESTANT</small><br><b id="txt-budget-rem" style="font-size:20px">0€</b></div>
+        
+        <div class="card" id="budget-setup" style="text-align:center">
+            <b>Paramétrage du mois</b>
+            <input type="text" id="limit-input" placeholder="Somme à dépenser ce mois" inputmode="decimal">
+            <button class="btn-ios green" onclick="lockBudget()">Valider le budget du mois</button>
+            <small style="color:var(--gray)">Une fois validé, ce montant est bloqué jusqu'au mois prochain.</small>
         </div>
+
+        <div id="budget-active" style="display:none">
+            <div style="text-align:center"><span class="status-badge">✓ BUDGET VERROUILLÉ</span></div>
+            <div class="gauge-container">
+                <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-budget" cx="100" cy="100" r="85" stroke="var(--green)" stroke-dasharray="534" stroke-dashoffset="534"></circle></svg>
+                <div class="gauge-data"><small>RESTANT</small><br><b id="txt-budget-rem" style="font-size:20px">0€</b></div>
+            </div>
+        </div>
+
         <div class="card">
-            <input type="text" id="op-name" placeholder="Nom (ex: Loyer)">
+            <input type="text" id="op-name" placeholder="Nom de l'opération">
             <select id="op-cat">
                 <option value="Abonnements">📱 Abonnements (Récurrent)</option>
                 <option value="Courses">🛒 Courses</option>
@@ -92,7 +99,7 @@
         </div>
 
         <div class="card">
-            <b>🔄 Abonnements en cours</b>
+            <b>🔄 Mes Abonnements</b>
             <div id="list-subs" style="margin-top:10px"></div>
         </div>
 
@@ -102,7 +109,7 @@
     </div>
 
     <div id="scr-projets" class="screen">
-        <h2 style="text-align:center">Projets</h2>
+        <h2 style="text-align:center">Mes Projets</h2>
         <div class="card">
             <input type="text" id="pj-name" placeholder="Nom du projet">
             <input type="text" id="pj-goal" placeholder="Objectif (€)" inputmode="decimal">
@@ -112,7 +119,7 @@
     </div>
 
     <div id="scr-cal" class="screen">
-        <h2 style="text-align:center">Journal</h2>
+        <h2 style="text-align:center">Historique</h2>
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
                 <button onclick="mMonth(-1)" style="color:var(--cyan); background:none; border:none; font-size:24px">◀</button>
@@ -132,36 +139,59 @@
     </nav>
 
     <script>
-        // Version 4 : Ajout de la récurrence des abonnements
-        let db = JSON.parse(localStorage.getItem('zen_pro_v4')) || { 
-            base: 0, limit: 1000, tx: [], projects: [], subs: [] 
+        // Version 5 : Verrouillage du budget mensuel
+        let db = JSON.parse(localStorage.getItem('zen_pro_v5')) || { 
+            base: 0, 
+            limit: 0, 
+            limitLockedMonth: "", // Format MM/YYYY
+            tx: [], 
+            projects: [], 
+            subs: [] 
         };
         let cDate = new Date();
         let sDate = new Date().toLocaleDateString('fr-FR');
 
+        function checkBudgetLock() {
+            const currentMonthYear = (new Date().getMonth() + 1).toString().padStart(2, '0') + '/' + new Date().getFullYear();
+            const setupView = document.getElementById('budget-setup');
+            const activeView = document.getElementById('budget-active');
+
+            if (db.limitLockedMonth === currentMonthYear) {
+                setupView.style.display = 'none';
+                activeView.style.display = 'block';
+            } else {
+                setupView.style.display = 'block';
+                activeView.style.display = 'none';
+            }
+        }
+
+        function lockBudget() {
+            const val = parseFloat(document.getElementById('limit-input').value.replace(',', '.'));
+            if (!isNaN(val) && val > 0) {
+                const currentMonthYear = (new Date().getMonth() + 1).toString().padStart(2, '0') + '/' + new Date().getFullYear();
+                db.limit = val;
+                db.limitLockedMonth = currentMonthYear;
+                alert(`Budget de ${val}€ verrouillé pour ${currentMonthYear}.`);
+                refresh();
+            } else {
+                alert("Veuillez entrer un montant valide.");
+            }
+        }
+
         function checkRecurring() {
-            const today = new Date();
-            const monthYear = (today.getMonth() + 1).toString().padStart(2, '0') + '/' + today.getFullYear();
-            
+            const monthYear = (new Date().getMonth() + 1).toString().padStart(2, '0') + '/' + new Date().getFullYear();
             db.subs.forEach(sub => {
-                // Si l'abonnement n'a pas encore été enregistré pour ce mois
                 const alreadyDone = db.tx.some(t => t.subId === sub.id && t.d.includes(monthYear));
                 if (!alreadyDone) {
-                    db.tx.push({ 
-                        n: sub.n, 
-                        c: "Abonnements", 
-                        a: sub.a, 
-                        d: `01/${monthYear}`, // Enregistré au 1er du mois
-                        subId: sub.id,
-                        ts: Date.now() 
-                    });
+                    db.tx.push({ n: sub.n, c: "Abonnements", a: sub.a, d: `01/${monthYear}`, subId: sub.id, ts: Date.now() });
                 }
             });
-            save();
         }
 
         function refresh() {
+            checkBudgetLock();
             checkRecurring();
+            
             const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
             const ins = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
             const bal = db.base + ins - out;
@@ -177,9 +207,9 @@
             renderCal();
             renderSubs();
             
-            const last5 = db.tx.slice(-5).reverse().map((t, i) => `
+            const last5 = db.tx.slice(-5).reverse().map(t => `
                 <div class="tx-row">
-                    <span><small class="cat-tag">${t.c || 'Autre'}</small>${t.n}</span>
+                    <span><small style="opacity:0.5">${t.c || 'Autre'}</small><br>${t.n}</span>
                     <div style="display:flex; align-items:center">
                         <b>${t.a}€</b>
                         <button class="del-btn" onclick="deleteTx(${db.tx.indexOf(t)})">🗑️</button>
@@ -208,8 +238,6 @@
             if(!isNaN(a)) {
                 const amount = a * dir;
                 const txDate = new Date().toLocaleDateString('fr-FR');
-                
-                // Si c'est un abonnement, on l'ajoute à la liste récurrente
                 if (c === "Abonnements" && dir < 0) {
                     const newSub = { id: Date.now(), n, a: amount };
                     db.subs.push(newSub);
@@ -217,32 +245,25 @@
                 } else {
                     db.tx.push({ n, c, a: amount, d: txDate, ts: Date.now() });
                 }
-                
-                document.getElementById('op-amount').value = ""; 
-                document.getElementById('op-name').value = "";
+                document.getElementById('op-amount').value = ""; document.getElementById('op-name').value = "";
                 refresh();
             }
         }
 
         function deleteSub(index) {
-            if(confirm("Arrêter cet abonnement récurrent ? (Les transactions passées resteront)")) {
-                db.subs.splice(index, 1);
-                refresh();
-            }
+            if(confirm("Supprimer cet abonnement récurrent ?")) { db.subs.splice(index, 1); refresh(); }
         }
 
         function deleteTx(index) {
-            if(confirm("Supprimer cette transaction ?")) {
-                db.tx.splice(index, 1);
-                refresh();
-            }
+            if(confirm("Supprimer cette transaction ?")) { db.tx.splice(index, 1); refresh(); }
         }
 
-        function save() { localStorage.setItem('zen_pro_v4', JSON.stringify(db)); }
+        function save() { localStorage.setItem('zen_pro_v5', JSON.stringify(db)); }
         
         function updateRing(id, val, max) {
             const pct = max > 0 ? Math.max(0, Math.min(100, (val / max) * 100)) : 0;
-            document.getElementById(id).style.strokeDashoffset = 534 - (pct / 100) * 534;
+            const ring = document.getElementById(id);
+            if(ring) ring.style.strokeDashoffset = 534 - (pct / 100) * 534;
         }
 
         function updateStats() {
@@ -316,9 +337,9 @@
                         if(toSave <= 0) break;
                     }
                 }
-                alert(`${rem.toFixed(2)}€ économisés !`);
+                alert(`${rem.toFixed(2)}€ ajoutés à vos projets.`);
                 refresh();
-            } else { alert("Rien à épargner."); }
+            } else { alert("Pas d'excédent à épargner."); }
         }
 
         function tab(id, btn) {
@@ -341,7 +362,7 @@
 
         function showDayDetails(ds) {
             const txs = db.tx.filter(t => t.d === ds);
-            document.getElementById('cal-details').innerHTML = `<b>${ds}</b><br>` + (txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Vide");
+            document.getElementById('cal-details').innerHTML = `<b>${ds}</b><br>` + (txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Aucune opération");
         }
 
         function mMonth(v) { cDate.setMonth(cDate.getMonth()+v); refresh(); }
