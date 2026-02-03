@@ -30,12 +30,6 @@
         .bg-ring { stroke: #1a1a1a; }
         .gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
         
-        /* Stats Bars */
-        .stat-bar-container { margin: 10px 0; }
-        .stat-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-        .stat-rail { background: #222; height: 8px; border-radius: 4px; overflow: hidden; }
-        .stat-fill { background: var(--cyan); height: 100%; transition: width 0.5s; }
-
         /* Jauge Projet Verticale */
         .v-gauge-wrapper { display: flex; align-items: flex-end; width: 40px; height: 150px; background: #1a1a1a; border-radius: 20px; overflow: hidden; border: 1px solid #333; margin-right: 15px; }
         .v-gauge-fill { width: 100%; background: linear-gradient(to top, var(--purple), var(--cyan)); transition: height 1s; }
@@ -60,12 +54,6 @@
             <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-global" cx="100" cy="100" r="85" stroke="var(--cyan)" stroke-dasharray="534" stroke-dashoffset="534"></circle></svg>
             <div class="gauge-data"><b id="txt-global" style="font-size:20px">0€</b></div>
         </div>
-        
-        <div class="card" id="cat-stats">
-            <b>Répartition du mois</b><br><br>
-            <div id="stats-area"></div>
-        </div>
-
         <div class="card">
             <input type="text" id="level-input" placeholder="Nouveau solde total" inputmode="decimal">
             <button class="btn-ios cyan" onclick="levelUp()">Mettre à niveau le solde</button>
@@ -82,9 +70,8 @@
         <div class="card">
             <input type="text" id="op-name" placeholder="Nom de l'opération">
             <select id="op-cat">
-                <option value="Abonnements">📱 Abonnements</option>
+                <option value="Fixe">🏠 Charges fixes</option>
                 <option value="Courses">🛒 Courses</option>
-                <option value="Fast-Food">🍔 Fast-food</option>
                 <option value="Loisirs">🎉 Loisirs</option>
                 <option value="Santé">💊 Santé</option>
                 <option value="Autre">✨ Autre</option>
@@ -97,14 +84,14 @@
         </div>
         <div class="card">
             <button class="btn-ios purple" onclick="closeMonth()">🔒 Clôturer & Épargner</button>
-            <p style="font-size:10px; color:var(--gray); text-align:center">Le reste du budget part vers votre projet.</p>
+            <p style="font-size:10px; color:var(--gray); text-align:center">Envoie le reste du budget vers votre projet actif.</p>
         </div>
     </div>
 
     <div id="scr-projets" class="screen">
         <h2 style="text-align:center">Mes Projets</h2>
         <div class="card">
-            <input type="text" id="pj-name" placeholder="Nom du projet (ex: iPhone 16)">
+            <input type="text" id="pj-name" placeholder="Nom du projet (ex: Vacances)">
             <input type="text" id="pj-goal" placeholder="Objectif (€)" inputmode="decimal">
             <button class="btn-ios purple" onclick="addProject()">+ Créer Projet</button>
         </div>
@@ -139,27 +126,28 @@
         let sDate = new Date().toLocaleDateString('fr-FR');
 
         function refresh() {
+            // Calculs
             const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
             const ins = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
             const bal = db.base + ins - out;
             const rem = db.limit - out + ins;
 
+            // Update UI
             document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
             updateRing('ring-global', bal, bal > 2000 ? bal : 2000);
             document.getElementById('txt-budget-rem').innerText = rem.toFixed(2) + '€';
             updateRing('ring-budget', rem, db.limit);
 
-            updateStats();
-
+            // Liste Global (Dernières 5)
             const last5 = db.tx.slice(-5).reverse().map((t, i) => `
                 <div class="tx-row">
-                    <span><small class="cat-tag">${t.c || 'Autre'}</small>${t.n}</span>
+                    <span><small class="cat-tag">${t.c}</small>${t.n}</span>
                     <div style="display:flex; align-items:center">
                         <b>${t.a}€</b>
                         <button class="del-btn" onclick="deleteTx(${db.tx.length - 1 - i})">🗑️</button>
                     </div>
                 </div>`).join('');
-            document.getElementById('list-global').innerHTML = "<b>Dernières activités :</b>" + (last5 || "<br>Aucune donnée");
+            document.getElementById('list-global').innerHTML = "<b>Activités :</b>" + (last5 || "<br>Rien à signaler");
 
             renderProjects();
             renderCal();
@@ -171,28 +159,6 @@
             document.getElementById(id).style.strokeDashoffset = 534 - (pct / 100) * 534;
         }
 
-        function updateStats() {
-            const monthStr = (cDate.getMonth() + 1).toString().padStart(2, '0') + '/' + cDate.getFullYear();
-            const monthlyTx = db.tx.filter(t => t.d.includes(monthStr) && t.a < 0);
-            const totalOut = monthlyTx.reduce((s, t) => s + Math.abs(t.a), 0);
-            
-            const cats = ["Abonnements", "Courses", "Fast-Food", "Loisirs", "Santé", "Autre"];
-            let html = "";
-
-            cats.forEach(c => {
-                const amt = monthlyTx.filter(t => t.c === c).reduce((s, t) => s + Math.abs(t.a), 0);
-                const pct = totalOut > 0 ? (amt / totalOut * 100) : 0;
-                if(amt > 0) {
-                    html += `
-                    <div class="stat-bar-container">
-                        <div class="stat-label"><span>${c}</span><b>${amt.toFixed(2)}€</b></div>
-                        <div class="stat-rail"><div class="stat-fill" style="width:${pct}%"></div></div>
-                    </div>`;
-                }
-            });
-            document.getElementById('stats-area').innerHTML = html || "<small style='color:#666'>Aucune dépense ce mois-ci</small>";
-        }
-
         function addMoney(dir) {
             const n = document.getElementById('op-name').value || (dir > 0 ? "Revenu" : "Dépense");
             const a = document.getElementById('op-amount').value.replace(',', '.');
@@ -200,7 +166,6 @@
             if(a && !isNaN(a)) {
                 db.tx.push({ n, c, a: parseFloat(a) * dir, d: new Date().toLocaleDateString('fr-FR'), ts: Date.now() });
                 document.getElementById('op-amount').value = "";
-                document.getElementById('op-name').value = "";
                 refresh();
             }
         }
@@ -215,6 +180,7 @@
         function levelUp() {
             const v = document.getElementById('level-input').value.replace(',', '.');
             if(v && !isNaN(v)) {
+                // On ajuste la base pour que le solde final (base + tx) égale la nouvelle valeur
                 const currentTxBal = db.tx.reduce((s, t) => s + t.a, 0);
                 db.base = parseFloat(v) - currentTxBal;
                 document.getElementById('level-input').value = "";
@@ -256,12 +222,14 @@
             const rem = db.limit - out + ins;
 
             if(rem > 0 && db.projects.length > 0) {
-                db.projects[0].s += rem; 
-                alert(`Félicitations ! ${rem.toFixed(2)}€ ajoutés à ${db.projects[0].n}`);
-                refresh();
+                db.projects[0].s += rem; // On ajoute au premier projet par défaut
+                alert(`Mois clôturé ! ${rem.toFixed(2)}€ ont été ajoutés à votre projet : ${db.projects[0].n}`);
+                // On archive les transactions du mois (optionnel, ici on garde tout mais on pourrait filtrer)
+                // Pour simplifier, on reset juste la limite visuelle
             } else {
                 alert("Rien à épargner ou aucun projet créé.");
             }
+            refresh();
         }
 
         function tab(id, btn) {
@@ -269,9 +237,9 @@
             document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             btn.classList.add('active');
-            refresh();
         }
 
+        // Calendrier (simplifié pour l'exemple)
         function renderCal() {
             const grid = document.getElementById('cal-grid'); grid.innerHTML = "";
             document.getElementById('cal-title').innerText = cDate.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
@@ -289,8 +257,8 @@
 
         function showDayDetails(ds) {
             const txs = db.tx.filter(t => t.d === ds);
-            document.getElementById('cal-details').innerHTML = `<b>Opérations du ${ds}</b><br>` + 
-                (txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Aucune");
+            document.getElementById('cal-details').innerHTML = `<b>${ds}</b><br>` + 
+                txs.map((t,i) => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('');
         }
 
         function mMonth(v) { cDate.setMonth(cDate.getMonth()+v); refresh(); }
