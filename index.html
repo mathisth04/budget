@@ -12,20 +12,24 @@
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            font-family: -apple-system, system-ui, sans-serif; 
             background: var(--bg); color: #fff; margin: 0; 
             padding: env(safe-area-inset-top) 20px 120px 20px;
-            -webkit-font-smoothing: antialiased;
         }
         
         /* Correction Clavier iOS */
-        input, select { 
+        input { 
             -webkit-user-select: text !important;
             user-select: text !important;
             width: 100%; padding: 16px; margin: 8px 0; border-radius: 12px; 
-            background: #fff !important; color: #000 !important; 
-            border: 2px solid #444; font-size: 17px !important; /* 17px empêche le zoom forcé iOS */
-            appearance: none;
+            background: #ffffff !important; color: #000000 !important; 
+            border: 2px solid #444; font-size: 17px !important;
+        }
+
+        select {
+            width: 100%; padding: 16px; margin: 8px 0; border-radius: 12px; 
+            background: #ffffff !important; color: #000000 !important; 
+            font-size: 17px; height: 55px;
         }
 
         .nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(75px + env(safe-area-inset-bottom)); background: #111; display: flex; z-index: 1000; border-top: 1px solid #333; }
@@ -58,12 +62,7 @@
 
         .tx-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; font-size: 14px; }
         .del-btn { background: none; border: none; color: var(--red); font-size: 20px; padding-left: 10px; }
-        .status-badge { font-size: 10px; padding: 4px 8px; border-radius: 10px; background: #1a332a; color: var(--green); font-weight: bold; margin-bottom: 10px; display: inline-block; border: 1px solid var(--green); }
-        
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .cal-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; font-size: 13px; position: relative; }
-        .selected { background: var(--purple); color: white; }
-        .has-data::after { content: ''; width: 4px; height: 4px; background: var(--green); border-radius: 50%; position: absolute; bottom: 3px; }
+        .status-badge { font-size: 10px; padding: 4px 8px; border-radius: 10px; background: #1a332a; color: var(--green); font-weight: bold; display: inline-block; border: 1px solid var(--green); margin-bottom: 10px;}
     </style>
 </head>
 <body>
@@ -85,34 +84,37 @@
     <div id="scr-budget" class="screen">
         <h2 style="text-align:center">Budget Mensuel</h2>
         
-        <div class="card" id="budget-setup">
-            <b style="display:block; text-align:center; margin-bottom:10px">Initialisation du mois</b>
-            <input type="text" id="limit-input" placeholder="Montant max (€)" inputmode="decimal">
-            <button class="btn-ios green" onclick="lockBudget()">Valider mon budget</button>
+        <div class="card">
+            <div id="budget-setup-ui">
+                <b style="display:block; text-align:center; margin-bottom:10px">Fixer le budget du mois</b>
+                <input type="text" id="limit-input" placeholder="Montant max (€)" inputmode="decimal">
+                <button class="btn-ios green" onclick="lockBudget()">Valider</button>
+            </div>
+            <div id="budget-locked-ui" style="display:none; text-align:center;">
+                <span class="status-badge">✓ BUDGET DÉFINI</span>
+                <p id="locked-amount-label" style="margin: 5px 0 0 0; font-weight: bold; font-size: 18px; color: var(--green);"></p>
+            </div>
         </div>
 
-        <div id="budget-active" style="display:none">
-            <div style="text-align:center"><span class="status-badge">✓ BUDGET DÉFINI</span></div>
-            <div class="gauge-container">
-                <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-budget" cx="100" cy="100" r="85" stroke="var(--green)" stroke-dasharray="534" stroke-dashoffset="534"></circle></svg>
-                <div class="gauge-data"><small>RESTANT</small><br><b id="txt-budget-rem" style="font-size:20px">0€</b></div>
-            </div>
+        <div class="gauge-container">
+            <svg viewBox="0 0 200 200"><circle class="bg-ring" cx="100" cy="100" r="85"></circle><circle id="ring-budget" cx="100" cy="100" r="85" stroke="var(--green)" stroke-dasharray="534" stroke-dashoffset="534"></circle></svg>
+            <div class="gauge-data"><small>RESTANT</small><br><b id="txt-budget-rem" style="font-size:20px">0€</b></div>
+        </div>
 
-            <div class="card">
-                <input type="text" id="op-name" placeholder="Nom de l'opération">
-                <select id="op-cat">
-                    <option value="Abonnements">📱 Abonnements (Récurrent)</option>
-                    <option value="Courses">🛒 Courses</option>
-                    <option value="Fast-Food">🍔 Fast-food</option>
-                    <option value="Loisirs">🎉 Loisirs</option>
-                    <option value="Santé">💊 Santé</option>
-                    <option value="Autre">✨ Autre</option>
-                </select>
-                <input type="text" id="op-amount" placeholder="Montant (€)" inputmode="decimal">
-                <div style="display:flex; gap:10px">
-                    <button class="btn-ios green" onclick="addMoney(1)">+ Revenu</button>
-                    <button class="btn-ios red" onclick="addMoney(-1)">- Dépense</button>
-                </div>
+        <div class="card">
+            <input type="text" id="op-name" placeholder="Nom de l'opération">
+            <select id="op-cat">
+                <option value="Abonnements">📱 Abonnements (Récurrent)</option>
+                <option value="Courses">🛒 Courses</option>
+                <option value="Fast-Food">🍔 Fast-food</option>
+                <option value="Loisirs">🎉 Loisirs</option>
+                <option value="Santé">💊 Santé</option>
+                <option value="Autre">✨ Autre</option>
+            </select>
+            <input type="text" id="op-amount" placeholder="Montant (€)" inputmode="decimal">
+            <div style="display:flex; gap:10px">
+                <button class="btn-ios green" onclick="addMoney(1)">+ Revenu</button>
+                <button class="btn-ios red" onclick="addMoney(-1)">- Dépense</button>
             </div>
         </div>
 
@@ -157,35 +159,44 @@
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('zen_pro_v6')) || { 
+        // Version 7 : Isolation complète du verrou de budget
+        let db = JSON.parse(localStorage.getItem('zen_pro_v7')) || { 
             base: 0, limit: 0, limitLockedMonth: "", tx: [], projects: [], subs: [] 
         };
         let cDate = new Date();
         let sDate = new Date().toLocaleDateString('fr-FR');
 
-        function checkBudgetView() {
+        function checkBudgetLockStatus() {
             const currentMonthYear = (new Date().getMonth() + 1).toString().padStart(2, '0') + '/' + new Date().getFullYear();
-            const setupView = document.getElementById('budget-setup');
-            const activeView = document.getElementById('budget-active');
-            if (db.limitLockedMonth !== currentMonthYear || db.limit <= 0) {
-                setupView.style.display = 'block'; activeView.style.display = 'none';
+            const setupUI = document.getElementById('budget-setup-ui');
+            const lockedUI = document.getElementById('budget-locked-ui');
+            const label = document.getElementById('locked-amount-label');
+
+            if (db.limitLockedMonth === currentMonthYear && db.limit > 0) {
+                setupUI.style.display = 'none';
+                lockedUI.style.display = 'block';
+                label.innerText = db.limit.toFixed(2) + " €";
             } else {
-                setupView.style.display = 'none'; activeView.style.display = 'block';
+                setupUI.style.display = 'block';
+                lockedUI.style.display = 'none';
             }
         }
 
         function lockBudget() {
-            const val = parseFloat(document.getElementById('limit-input').value.replace(',', '.'));
+            const input = document.getElementById('limit-input');
+            const val = parseFloat(input.value.replace(',', '.'));
             if (!isNaN(val) && val > 0) {
                 db.limit = val;
                 db.limitLockedMonth = (new Date().getMonth() + 1).toString().padStart(2, '0') + '/' + new Date().getFullYear();
+                input.value = "";
                 refresh();
             }
         }
 
         function refresh() {
-            checkBudgetView();
+            checkBudgetLockStatus();
             checkRecurring();
+            
             const out = db.tx.filter(t => t.a < 0).reduce((s, t) => s + Math.abs(t.a), 0);
             const ins = db.tx.filter(t => t.a > 0).reduce((s, t) => s + t.a, 0);
             const bal = db.base + ins - out;
@@ -193,9 +204,7 @@
 
             document.getElementById('txt-global').innerText = bal.toFixed(2) + '€';
             updateRing('ring-global', bal, 2000);
-            
-            const txtBudget = document.getElementById('txt-budget-rem');
-            if(txtBudget) txtBudget.innerText = rem.toFixed(2) + '€';
+            document.getElementById('txt-budget-rem').innerText = rem.toFixed(2) + '€';
             updateRing('ring-budget', rem, db.limit);
 
             updateStats(); renderProjects(); renderCal(); renderSubs();
@@ -205,7 +214,7 @@
                     <span><small style="opacity:0.5">${t.c || 'Autre'}</small><br>${t.n}</span>
                     <div style="display:flex; align-items:center"><b>${t.a}€</b><button class="del-btn" onclick="deleteTx(${db.tx.indexOf(t)})">🗑️</button></div>
                 </div>`).join('');
-            document.getElementById('list-global').innerHTML = "<b>Dernières activités :</b>" + (last5 || "<br>Rien");
+            document.getElementById('list-global').innerHTML = "<b>Activités :</b>" + (last5 || "<br>Rien");
             save();
         }
 
@@ -223,13 +232,14 @@
             document.getElementById('list-subs').innerHTML = db.subs.map((s, i) => `
                 <div class="tx-row">
                     <span>${s.n}</span>
-                    <div style="display:flex; align-items:center"><b style="color:var(--red)">${s.a}€/mois</b><button class="del-btn" onclick="deleteSub(${i})">🗑️</button></div>
+                    <div style="display:flex; align-items:center"><b style="color:var(--red)">${s.a}€/m</b><button class="del-btn" onclick="deleteSub(${i})">🗑️</button></div>
                 </div>`).join('') || "<small style='color:#666'>Aucun abonnement</small>";
         }
 
         function addMoney(dir) {
             const n = document.getElementById('op-name').value || (dir > 0 ? "Revenu" : "Dépense");
-            const a = parseFloat(document.getElementById('op-amount').value.replace(',', '.'));
+            const amtInput = document.getElementById('op-amount');
+            const a = parseFloat(amtInput.value.replace(',', '.'));
             const c = document.getElementById('op-cat').value;
             if(!isNaN(a)) {
                 const amount = a * dir;
@@ -241,14 +251,14 @@
                 } else {
                     db.tx.push({ n, c, a: amount, d: txDate, ts: Date.now() });
                 }
-                document.getElementById('op-amount').value = ""; document.getElementById('op-name').value = "";
+                amtInput.value = ""; document.getElementById('op-name').value = "";
                 refresh();
             }
         }
 
-        function deleteSub(index) { if(confirm("Supprimer ?")) { db.subs.splice(index, 1); refresh(); } }
-        function deleteTx(index) { if(confirm("Supprimer ?")) { db.tx.splice(index, 1); refresh(); } }
-        function save() { localStorage.setItem('zen_pro_v6', JSON.stringify(db)); }
+        function deleteSub(index) { if(confirm("Supprimer l'abonnement ?")) { db.subs.splice(index, 1); refresh(); } }
+        function deleteTx(index) { if(confirm("Supprimer la transaction ?")) { db.tx.splice(index, 1); refresh(); } }
+        function save() { localStorage.setItem('zen_pro_v7', JSON.stringify(db)); }
         
         function updateRing(id, val, max) {
             const pct = max > 0 ? Math.max(0, Math.min(100, (val / max) * 100)) : 0;
@@ -274,16 +284,21 @@
         }
 
         function levelUp() {
-            const v = document.getElementById('level-input').value.replace(',', '.');
-            if(v && !isNaN(v)) {
-                db.base = parseFloat(v) - db.tx.reduce((s, t) => s + t.a, 0);
-                document.getElementById('level-input').value = ""; refresh();
+            const input = document.getElementById('level-input');
+            const v = parseFloat(input.value.replace(',', '.'));
+            if(!isNaN(v)) {
+                db.base = v - db.tx.reduce((s, t) => s + t.a, 0);
+                input.value = ""; refresh();
             }
         }
 
         function addProject() {
-            const n = document.getElementById('pj-name').value, g = document.getElementById('pj-goal').value.replace(',', '.');
-            if(n && g) { db.projects.push({ n, g: parseFloat(g), s: 0 }); document.getElementById('pj-name').value = ""; document.getElementById('pj-goal').value = ""; refresh(); }
+            const n = document.getElementById('pj-name').value, g = parseFloat(document.getElementById('pj-goal').value.replace(',', '.'));
+            if(n && !isNaN(g)) { 
+                db.projects.push({ n, g, s: 0 }); 
+                document.getElementById('pj-name').value = ""; document.getElementById('pj-goal').value = ""; 
+                refresh(); 
+            }
         }
 
         function movePrio(index, dir) {
@@ -295,8 +310,7 @@
         function renderProjects() {
             document.getElementById('project-list').innerHTML = db.projects.map((p, i) => {
                 const pct = Math.min(100, (p.s / p.g) * 100);
-                return `
-                <div class="project-item card">
+                return `<div class="project-item card">
                     <div style="font-weight:bold; color:var(--cyan); margin-right:10px; font-size:18px">#${i+1}</div>
                     <div class="v-gauge-wrapper"><div class="v-gauge-fill" style="height:${pct}%"></div></div>
                     <div style="flex:1"><b>${p.n}</b><br><small>${p.s.toFixed(2)} / ${p.g}€</small></div>
@@ -324,6 +338,7 @@
             document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
             document.getElementById(id).classList.add('active'); btn.classList.add('active');
+            window.scrollTo(0,0);
             refresh();
         }
 
@@ -340,7 +355,7 @@
 
         function showDayDetails(ds) {
             const txs = db.tx.filter(t => t.d === ds);
-            document.getElementById('cal-details').innerHTML = `<b>${ds}</b><br>` + (txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Aucune opération");
+            document.getElementById('cal-details').innerHTML = `<b>${ds}</b><br>` + (txs.map(t => `<div class="tx-row"><span>${t.n}</span><b>${t.a}€</b></div>`).join('') || "Vide");
         }
 
         function mMonth(v) { cDate.setMonth(cDate.getMonth()+v); refresh(); }
